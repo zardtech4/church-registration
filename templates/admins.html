@@ -1,0 +1,750 @@
+
+<!DOCTYPE html>
+<html lang="sw">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Admin & Security - Usajili wa Waumini</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+    <nav class="navbar">
+
+        <div class="nav-brand">
+            USAJILI WA WAUMINI
+        </div>
+
+
+        <div class="nav-links">
+
+            <a href="{{ url_for('dashboard') }}">
+                Dashboard
+            </a>
+
+            <a href="{{ url_for('register') }}">
+                Sajili
+            </a>
+
+            <a href="{{ url_for('members') }}">
+                Waumini
+            </a>
+
+            <a href="{{ url_for('admins') }}">
+                Admin & Security
+            </a>
+
+            <a href="{{ url_for('logout') }}">
+                Toka
+            </a>
+
+        </div>
+
+    </nav>
+
+
+
+    <main class="admin-container">
+
+
+        <section class="admin-header">
+
+
+            <div>
+
+                <span class="dashboard-label">
+                    USALAMA WA MFUMO
+                </span>
+
+                <h1>
+                    Admin & Security
+                </h1>
+
+                <p>
+                    Simamia akaunti za wasimamizi,
+                    roles na usalama wa mfumo.
+                </p>
+
+            </div>
+
+
+
+            {% if can_create_admins %}
+
+                <a
+                    href="{{ url_for('create_admin') }}"
+                    class="primary-button"
+                >
+                    + CREATE ADMINISTRATOR
+                </a>
+
+            {% endif %}
+
+
+        </section>
+
+
+
+        <section class="admin-stats">
+
+
+            <div class="admin-stat-card">
+
+                <div class="admin-stat-icon">
+                    👥
+                </div>
+
+                <div>
+
+                    <span>
+                        ADMINISTRATORS
+                    </span>
+
+                    <strong>
+                        {{ admins|length }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="admin-stat-card">
+
+                <div class="admin-stat-icon">
+                    🟢
+                </div>
+
+                <div>
+
+                    <span>
+                        ACTIVE
+                    </span>
+
+                    <strong>
+                        {{ admins|selectattr("is_active")|list|length }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="admin-stat-card">
+
+                <div class="admin-stat-icon">
+                    🔴
+                </div>
+
+                <div>
+
+                    <span>
+                        INACTIVE
+                    </span>
+
+                    <strong>
+                        {{ admins|rejectattr("is_active")|list|length }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+
+        <section class="admin-actions">
+
+
+            {% if can_create_admins %}
+
+                <a
+                    href="{{ url_for('create_admin') }}"
+                    class="security-action-card"
+                >
+
+                    <div class="security-action-icon">
+                        +
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Create Administrator
+                        </h3>
+
+                        <p>
+                            Tengeneza akaunti mpya
+                            ya administrator.
+                        </p>
+
+                    </div>
+
+                </a>
+
+            {% endif %}
+
+
+
+            <a
+                href="{{ url_for('change_password') }}"
+                class="security-action-card"
+            >
+
+                <div class="security-action-icon">
+                    🔑
+                </div>
+
+                <div>
+
+                    <h3>
+                        Change Password
+                    </h3>
+
+                    <p>
+                        Badilisha password ya
+                        akaunti yako.
+                    </p>
+
+                </div>
+
+            </a>
+
+
+
+            {% if can_view_audit %}
+
+                <a
+                    href="{{ url_for('audit_logs') }}"
+                    class="security-action-card"
+                >
+
+                    <div class="security-action-icon">
+                        📋
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Audit Logs
+                        </h3>
+
+                        <p>
+                            Fuatilia shughuli
+                            za mfumo.
+                        </p>
+
+                    </div>
+
+                </a>
+
+            {% endif %}
+
+
+        </section>
+
+
+
+        <section class="admins-table-card">
+
+
+            <div class="table-header">
+
+
+                <div>
+
+                    <span class="dashboard-label">
+                        ACCOUNTS
+                    </span>
+
+                    <h2>
+                        Administrators
+                    </h2>
+
+                    <p>
+                        Akaunti zote za wasimamizi
+                        wa mfumo.
+                    </p>
+
+                </div>
+
+
+                <span class="admin-count">
+
+                    {{ admins|length }}
+
+                    administrator
+                    {% if admins|length != 1 %}
+                        s
+                    {% endif %}
+
+                </span>
+
+
+            </div>
+
+
+
+            {% if admins %}
+
+
+                <div class="table-wrapper">
+
+
+                    <table>
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    ADMINISTRATOR
+                                </th>
+
+                                <th>
+                                    USERNAME
+                                </th>
+
+                                <th>
+                                    ROLE
+                                </th>
+
+                                <th>
+                                    STATUS
+                                </th>
+
+                                <th>
+                                    CREATED
+                                </th>
+
+                                <th>
+                                    LAST LOGIN
+                                </th>
+
+                                {% if can_manage_admins %}
+
+                                    <th>
+                                        ACTION
+                                    </th>
+
+                                {% endif %}
+
+                            </tr>
+
+                        </thead>
+
+
+
+                        <tbody>
+
+
+                            {% for admin in admins %}
+
+
+                                <tr>
+
+
+                                    <td>
+
+
+                                        <div class="admin-person">
+
+
+                                            <div class="admin-avatar">
+
+                                                {{ admin["full_name"][0]|upper }}
+
+                                            </div>
+
+
+                                            <div>
+
+                                                <strong>
+                                                    {{ admin["full_name"] }}
+                                                </strong>
+
+
+                                                {% if admin["email"] %}
+
+                                                    <small>
+                                                        {{ admin["email"] }}
+                                                    </small>
+
+                                                {% endif %}
+
+
+                                            </div>
+
+
+                                        </div>
+
+
+                                    </td>
+
+
+
+                                    <td>
+
+                                        <span class="admin-username">
+                                            @{{ admin["username"] }}
+                                        </span>
+
+                                    </td>
+
+
+
+                                    <td>
+
+
+                                        <div class="role-information">
+
+
+                                            <strong>
+
+                                                {% if admin["role_name"] %}
+
+                                                    {{ admin["role_name"]|replace("_", " ")|title }}
+
+                                                {% else %}
+
+                                                    {{ admin["role"]|replace("_", " ")|title }}
+
+                                                {% endif %}
+
+                                            </strong>
+
+
+                                            {% if admin["role_description"] %}
+
+                                                <small>
+                                                    {{ admin["role_description"] }}
+                                                </small>
+
+                                            {% endif %}
+
+
+                                        </div>
+
+
+                                    </td>
+
+
+
+                                    <td>
+
+
+                                        {% if admin["is_active"] %}
+
+                                            <span class="status-badge status-active">
+                                                ● Active
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="status-badge status-inactive">
+                                                ● Inactive
+                                            </span>
+
+                                        {% endif %}
+
+
+                                    </td>
+
+
+
+                                    <td>
+
+                                        {% if admin["created_at"] %}
+
+                                            <span class="date-value">
+                                                {{ admin["created_at"] }}
+                                            </span>
+
+                                        {% else %}
+
+                                            —
+
+                                        {% endif %}
+
+                                    </td>
+
+
+
+                                    <td>
+
+                                        {% if admin["last_login"] %}
+
+                                            <span class="date-value">
+                                                {{ admin["last_login"] }}
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="never-login">
+                                                Never
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+
+                                    {% if can_manage_admins %}
+
+
+                                        <td>
+
+
+                                            {% if current_admin and current_admin["id"] == admin["id"] %}
+
+
+                                                <span class="current-admin-badge">
+                                                    YOU
+                                                </span>
+
+
+                                            {% else %}
+
+
+                                                {% if admin["is_active"] %}
+
+
+                                                    <form
+                                                        method="POST"
+                                                        action="{{ url_for('deactivate_admin', id=admin['id']) }}"
+                                                        class="admin-action-form"
+                                                    >
+
+                                                        <button
+                                                            type="submit"
+                                                            class="admin-deactivate-button"
+                                                            onclick="return confirm('Una uhakika unataka kuzuia akaunti hii?');"
+                                                        >
+                                                            DEACTIVATE
+                                                        </button>
+
+                                                    </form>
+
+
+                                                {% else %}
+
+
+                                                    <form
+                                                        method="POST"
+                                                        action="{{ url_for('activate_admin', id=admin['id']) }}"
+                                                        class="admin-action-form"
+                                                    >
+
+                                                        <button
+                                                            type="submit"
+                                                            class="admin-activate-button"
+                                                            onclick="return confirm('Unataka kuamsha akaunti hii?');"
+                                                        >
+                                                            ACTIVATE
+                                                        </button>
+
+                                                    </form>
+
+
+                                                {% endif %}
+
+
+                                            {% endif %}
+
+
+                                        </td>
+
+
+                                    {% endif %}
+
+
+                                </tr>
+
+
+                            {% endfor %}
+
+
+                        </tbody>
+
+
+                    </table>
+
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="admin-empty-state">
+
+
+                    <div class="admin-empty-icon">
+                        👤
+                    </div>
+
+
+                    <h3>
+                        Hakuna administrators
+                    </h3>
+
+
+                    <p>
+                        Hakuna akaunti za administrators
+                        zilizopatikana kwenye mfumo.
+                    </p>
+
+
+                    {% if can_create_admins %}
+
+                        <a
+                            href="{{ url_for('create_admin') }}"
+                            class="primary-button"
+                        >
+                            + CREATE ADMINISTRATOR
+                        </a>
+
+                    {% endif %}
+
+
+                </div>
+
+
+            {% endif %}
+
+
+        </section>
+
+
+
+        <section class="security-information">
+
+
+            <div class="security-information-header">
+
+                <span class="dashboard-label">
+                    SYSTEM SECURITY
+                </span>
+
+                <h2>
+                    Usalama wa Mfumo
+                </h2>
+
+                <p>
+                    Akaunti za administrators ndizo
+                    zenye uwezo wa kufikia sehemu
+                    zilizolindwa za mfumo.
+                </p>
+
+            </div>
+
+
+
+            <div class="security-grid">
+
+
+                <div class="security-info-card">
+
+                    <div class="security-info-icon">
+                        🔐
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Password Security
+                        </h3>
+
+                        <p>
+                            Password za administrators
+                            zinahifadhiwa kwa mfumo
+                            wa password hashing.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="security-info-card">
+
+                    <div class="security-info-icon">
+                        🛡️
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Role-Based Access
+                        </h3>
+
+                        <p>
+                            Kila administrator anapata
+                            uwezo kulingana na role
+                            aliyopewa.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="security-info-card">
+
+                    <div class="security-info-icon">
+                        📋
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Audit Trail
+                        </h3>
+
+                        <p>
+                            Shughuli muhimu za mfumo
+                            zinaweza kufuatiliwa kupitia
+                            audit logs.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</body>
+
+</html>
+

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+
+<html lang="sw">
+
+<head>
+
+ 
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    Access Denied - Usajili wa Waumini
+</title>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+ 
+
+</head>
+
+<body>
+
+ 
+<main class="error-page">
+
+    <section class="error-card">
+
+        <div class="error-icon">
+            🔒
+        </div>
+
+        <div class="error-code">
+            403
+        </div>
+
+        <h1>
+            Huna Ruhusa
+        </h1>
+
+        <p>
+            Huna permission ya kufikia ukurasa huu.
+            Wasiliana na Superadmin kama unahitaji
+            access zaidi.
+        </p>
+
+        <div class="error-actions">
+
+            <a
+                href="{{ url_for('dashboard') }}"
+                class="primary-button"
+            >
+                ← RUDI DASHBOARD
+            </a>
+
+        </div>
+
+    </section>
+
+</main>
+ 
+
+</body>
+
+</html>

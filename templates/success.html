@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="sw">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Usajili Umefanikiwa</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+    <nav class="navbar">
+
+        <div class="nav-brand">
+            USAJILI WA WAUMINI
+        </div>
+
+        <div class="nav-links">
+
+            <a href="{{ url_for('register') }}">
+                Sajili
+            </a>
+
+            <a href="{{ url_for('login') }}">
+                🔐 Admin Login
+            </a>
+
+        </div>
+
+    </nav>
+
+
+
+    <main class="success-container">
+
+
+        <section class="success-card">
+
+
+            <div class="success-icon">
+                ✓
+            </div>
+
+
+            <div class="success-header">
+
+                <span class="dashboard-label">
+                    USAJILI UMEEKAMILIKA
+                </span>
+
+                <h1>
+                    Usajili Umefanikiwa!
+                </h1>
+
+                <p>
+                    Taarifa za muumini zimehifadhiwa
+                    kikamilifu kwenye mfumo.
+                </p>
+
+            </div>
+
+
+
+            <div class="success-member">
+
+                <p>
+                    MUUMINI
+                </p>
+
+                <h2>
+                    {{ jina }}
+                </h2>
+
+            </div>
+
+
+
+            <div class="registration-number">
+
+                <span>
+                    NAMBA YA USAJILI
+                </span>
+
+                <strong>
+                    {{ registration_number }}
+                </strong>
+
+            </div>
+
+
+
+            <div class="success-actions">
+
+                <a
+                    href="{{ url_for('register') }}"
+                    class="primary-button"
+                >
+                    SAJILI MUUMINI MWINGINE
+                </a>
+
+
+                <a
+                    href="{{ url_for('login') }}"
+                    class="secondary-button"
+                >
+                    🔐 INGIA KAMA ADMIN
+                </a>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</body>
+
+</html>
+

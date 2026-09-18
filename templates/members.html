@@ -1,0 +1,380 @@
+
+<!DOCTYPE html>
+<html lang="sw">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Orodha ya Waumini</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- NAVIGATION -->
+
+    <nav class="navbar">
+
+        <div class="nav-brand">
+            USAJILI WA WAUMINI
+        </div>
+
+        <div class="nav-links">
+
+            <a href="/dashboard">
+                Dashboard
+            </a>
+
+            <a href="/">
+                Sajili
+            </a>
+
+            <a href="/members">
+                Waumini
+            </a>
+
+        </div>
+
+    </nav>
+
+
+
+    <!-- MEMBERS PAGE -->
+
+    <main class="members-container">
+
+
+        <!-- HEADER -->
+
+        <section class="members-header">
+
+            <span class="dashboard-label">
+                USIMAMIZI WA WAUMINI
+            </span>
+
+            <h1>
+                Orodha ya Waumini
+            </h1>
+
+            <p>
+                Angalia, tafuta, hariri au futa taarifa za waumini.
+            </p>
+
+        </section>
+
+
+
+        <!-- TOTAL -->
+
+        <section class="members-summary">
+
+            <div class="summary-icon">
+                👥
+            </div>
+
+            <div>
+
+                <span>
+                    JUMLA YA WAUMINI
+                </span>
+
+                <strong>
+                    {{ jumla }}
+                </strong>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- SEARCH -->
+
+        <section class="search-card">
+
+            <form
+                method="GET"
+                action="/members"
+                class="search-form"
+            >
+
+                <div class="search-input-wrapper">
+
+                    <span class="search-icon">
+                        🔎
+                    </span>
+
+                    <input
+                        type="text"
+                        name="search"
+                        placeholder="Tafuta kwa jina, simu, makazi..."
+                        value="{{ search }}"
+                    >
+
+                </div>
+
+                <button
+                    type="submit"
+                    class="search-button"
+                >
+                    TAFUTA
+                </button>
+
+            </form>
+
+
+            {% if search %}
+
+                <div class="search-information">
+
+                    <p>
+                        Matokeo ya utafutaji:
+                        <strong>
+                            {{ waumini|length }}
+                        </strong>
+                    </p>
+
+                    <p>
+                        Umetafuta:
+                        <strong>
+                            "{{ search }}"
+                        </strong>
+                    </p>
+
+                    <a href="/members">
+                        Funga utafutaji
+                    </a>
+
+                </div>
+
+            {% endif %}
+
+        </section>
+
+
+
+        <!-- MEMBER TABLE -->
+
+        <section class="members-table-card">
+
+
+            <div class="table-header">
+
+                {% if search %}
+
+                    <h2>
+                        Matokeo ya Utafutaji
+                    </h2>
+
+                {% else %}
+
+                    <h2>
+                        Waumini Waliosajiliwa
+                    </h2>
+
+                {% endif %}
+
+                <span>
+                    {{ waumini|length }} wanaoonyeshwa
+                </span>
+
+            </div>
+
+
+            <div class="table-wrapper">
+
+                <table>
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                NA. YA USAJILI
+                            </th>
+
+                            <th>
+                                JINA KAMILI
+                            </th>
+
+                            <th>
+                                MAKAZI
+                            </th>
+
+                            <th>
+                                JINSIA
+                            </th>
+
+                            <th>
+                                SIMU
+                            </th>
+
+                            <th>
+                                PICHA
+                            </th>
+
+                            <th>
+                                EDIT
+                            </th>
+
+                            <th>
+                                DELETE
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                        {% for mtu in waumini %}
+
+                        <tr>
+
+
+                            <td>
+
+                                <span class="registration-number">
+                                    {{ mtu["namba_ya_usajili"] }}
+                                </span>
+
+                            </td>
+
+
+                            <td class="member-name">
+
+                                {{ mtu["jina_kamili"] }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ mtu["makazi"] }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ mtu["jinsia"] }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ mtu["namba_ya_sim"] }}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if mtu["picha"] %}
+
+                                    <img
+                                        class="member-photo"
+                                        src="{{ url_for(
+                                            'static',
+                                            filename='uploads/' + mtu['picha']
+                                        ) }}"
+                                        alt="Picha ya {{ mtu['jina_kamili'] }}"
+                                    >
+
+                                {% else %}
+
+                                    <div class="no-photo">
+                                        —
+                                    </div>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                <a
+                                    href="/edit/{{ mtu['id'] }}"
+                                    class="edit-button"
+                                >
+                                    EDIT
+                                </a>
+
+                            </td>
+
+
+                            <td>
+
+                                <a
+                                    href="/delete/{{ mtu['id'] }}"
+                                    class="delete-button"
+                                >
+                                    DELETE
+                                </a>
+
+                            </td>
+
+
+                        </tr>
+
+                        {% endfor %}
+
+
+                    </tbody>
+
+
+                </table>
+
+            </div>
+
+
+            {% if not waumini %}
+
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        👥
+                    </div>
+
+                    <h3>
+                        Hakuna waumini waliopatikana
+                    </h3>
+
+                    <p>
+                        Hakuna taarifa inayolingana
+                        na utafutaji wako.
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+
+        </section>
+
+
+    </main>
+
+
+</body>
+
+</html>
+

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html lang="sw">
+
+<head>
+
+ 
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    Hariri Muumini
+</title>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+ 
+
+</head>
+
+<body>
+
+ 
+<nav class="navbar">
+
+    <div class="nav-brand">
+        CHURCH REGISTRATION
+    </div>
+
+    <div class="nav-links">
+
+        <a href="{{ url_for('dashboard') }}">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('register') }}">
+            Sajili
+        </a>
+
+        <a href="{{ url_for('members') }}">
+            Waumini
+        </a>
+
+    </div>
+
+</nav>
+
+
+<main class="edit-container">
+
+    <section class="edit-card">
+
+
+        <div class="edit-header">
+
+            <span class="dashboard-label">
+                HARIRI TAARIFA
+            </span>
+
+            <h1>
+                Hariri Muumini
+            </h1>
+
+            <p>
+                Badilisha taarifa za muumini hapa chini.
+            </p>
+
+        </div>
+
+
+        <div class="registration-badge">
+
+            <span>
+                Namba ya Usajili
+            </span>
+
+            <strong>
+                {{ mtu["namba_ya_usajili"] }}
+            </strong>
+
+        </div>
+
+
+        <p class="edit-number-note">
+            Namba ya usajili haiwezi kubadilishwa.
+        </p>
+
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+
+            <div class="form-group">
+
+                <label for="jina_kamili">
+                    Jina Kamili
+                </label>
+
+                <input
+                    type="text"
+                    id="jina_kamili"
+                    name="jina_kamili"
+                    value="{{ mtu['jina_kamili'] }}"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="makazi">
+                    Makazi
+                </label>
+
+                <input
+                    type="text"
+                    id="makazi"
+                    name="makazi"
+                    value="{{ mtu['makazi'] }}"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="namba_ya_sim">
+                    Namba ya Simu
+                </label>
+
+                <input
+                    type="tel"
+                    id="namba_ya_sim"
+                    name="namba_ya_sim"
+                    value="{{ mtu['namba_ya_sim'] or '' }}"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="jinsia">
+                    Jinsia
+                </label>
+
+                <select
+                    id="jinsia"
+                    name="jinsia"
+                    required
+                >
+
+                    <option value="Mwanaume"
+                        {% if mtu["jinsia"] == "Mwanaume" %}
+                            selected
+                        {% endif %}
+                    >
+                        Mwanaume
+                    </option>
+
+                    <option value="Mwanamke"
+                        {% if mtu["jinsia"] == "Mwanamke" %}
+                            selected
+                        {% endif %}
+                    >
+                        Mwanamke
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="current-photo-section">
+
+                <label>
+                    Picha ya Sasa
+                </label>
+
+                {% if mtu["picha"] %}
+
+                    <img
+                        src="{{ url_for(
+                            'static',
+                            filename='uploads/' + mtu['picha']
+                        ) }}"
+                        alt="Picha ya {{ mtu['jina_kamili'] }}"
+                        class="edit-current-photo"
+                    >
+
+                {% else %}
+
+                    <div class="edit-no-photo">
+                        Hakuna picha
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="picha">
+                    Badilisha Picha
+                </label>
+
+                <input
+                    type="file"
+                    id="picha"
+                    name="picha"
+                    accept="image/*"
+                >
+
+                <small class="photo-help">
+                    Acha tupu kama hutaki kubadilisha picha.
+                </small>
+
+            </div>
+
+
+            <div class="edit-actions">
+
+                <button
+                    type="submit"
+                    class="primary-button"
+                >
+                    HIFADHI MABADILIKO
+                </button>
+
+                <a
+                    href="{{ url_for('members') }}"
+                    class="cancel-button"
+                >
+                    RUDI KWENYE ORODHA
+                </a>
+
+            </div>
+
+
+        </form>
+
+    </section>
+
+</main>
+ 
+
+</body>
+
+</html>

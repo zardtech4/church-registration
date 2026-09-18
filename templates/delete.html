@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="sw">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Thibitisha Kufuta</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body>
+
+    <!-- NAVIGATION -->
+
+    <nav class="navbar">
+
+        <div class="nav-brand">
+            CHURCH REGISTRATION
+        </div>
+
+        <div class="nav-links">
+
+            <a href="/dashboard">
+                Dashboard
+            </a>
+
+            <a href="/">
+                Sajili
+            </a>
+
+            <a href="/members">
+                Waumini
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <!-- DELETE CONTAINER -->
+
+    <main class="delete-container">
+
+        <section class="delete-card">
+
+            <!-- WARNING ICON -->
+
+            <div class="delete-icon">
+                !
+            </div>
+
+
+            <!-- HEADER -->
+
+            <div class="delete-header">
+
+                <span class="dashboard-label">
+                    TAHADHARI YA MFUMO
+                </span>
+
+                <h1>
+                    Thibitisha Kufuta
+                </h1>
+
+                <p>
+                    Una uhakika unataka kumfuta mwumini huyu?
+                </p>
+
+            </div>
+
+
+            <!-- MEMBER INFORMATION -->
+
+            <div class="delete-member">
+
+                {% if mtu["picha"] %}
+
+                    <img
+                        src="{{ url_for(
+                            'static',
+                            filename='uploads/' + mtu['picha']
+                        ) }}"
+                        alt="Picha ya {{ mtu['jina_kamili'] }}"
+                        class="delete-photo"
+                    >
+
+                {% else %}
+
+                    <div class="delete-photo-placeholder">
+                        👤
+                    </div>
+
+                {% endif %}
+
+
+                <div class="delete-details">
+
+                    <h2>
+                        {{ mtu["jina_kamili"] }}
+                    </h2>
+
+                    <p>
+
+                        <span>
+                            Namba ya Usajili
+                        </span>
+
+                        <strong>
+                            {{ mtu["namba_ya_usajili"] }}
+                        </strong>
+
+                    </p>
+
+
+                    <p>
+
+                        <span>
+                            Namba ya Simu
+                        </span>
+
+                        <strong>
+                            {{ mtu["namba_ya_sim"] }}
+                        </strong>
+
+                    </p>
+
+
+                    <p>
+
+                        <span>
+                            Makazi
+                        </span>
+
+                        <strong>
+                            {{ mtu["makazi"] }}
+                        </strong>
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- WARNING MESSAGE -->
+
+            <div class="delete-warning">
+
+                <strong>
+                    ⚠️ Hatua hii haiwezi kutenduliwa.
+                </strong>
+
+                <p>
+                    Taarifa za mwumini huyu pamoja na picha yake
+                    zitaondolewa kwenye mfumo.
+                </p>
+
+            </div>
+
+
+            <!-- DELETE ACTION -->
+
+            <form method="POST">
+
+                <button
+                    type="submit"
+                    class="danger-button"
+                >
+                    NDIO, FUTA MWUMINI
+                </button>
+
+            </form>
+
+
+            <!-- CANCEL -->
+
+            <a
+                href="/members"
+                class="cancel-button"
+            >
+                HAPANA, RUDI KWENYE ORODHA
+            </a>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>

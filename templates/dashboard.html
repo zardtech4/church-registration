@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="sw">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Dashboard - Usajili wa Waumini</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+    <nav class="navbar">
+
+
+        <div class="nav-brand">
+            USAJILI WA WAUMINI
+        </div>
+
+
+        <div class="nav-links">
+
+
+            <a href="{{ url_for('dashboard') }}">
+                Dashboard
+            </a>
+
+
+            <a href="{{ url_for('register') }}">
+                Sajili
+            </a>
+
+
+            <a href="{{ url_for('members') }}">
+                Waumini
+            </a>
+
+
+            {% if can_view_admins or can_view_audit %}
+
+                <a href="{{ url_for('admins') }}">
+                    Admin & Security
+                </a>
+
+            {% endif %}
+
+
+            <a href="{{ url_for('logout') }}">
+                Toka
+            </a>
+
+
+        </div>
+
+
+    </nav>
+
+
+
+    <main class="dashboard-container">
+
+
+        <section class="dashboard-header">
+
+
+            <div>
+
+                <span class="dashboard-label">
+                    MFUMO WA USIMAMIZI
+                </span>
+
+
+                <h1>
+                    Dashboard
+                </h1>
+
+
+                <p>
+                    Muhtasari wa taarifa za waumini waliosajiliwa.
+                </p>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <section class="stats-grid">
+
+
+            <div class="stat-card">
+
+
+                <div class="stat-icon">
+                    👥
+                </div>
+
+
+                <div class="stat-information">
+
+                    <p>
+                        JUMLA YA WAUMINI
+                    </p>
+
+
+                    <h2>
+                        {{ jumla }}
+                    </h2>
+
+
+                    <span>
+                        Waliosajiliwa kwenye mfumo
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+
+            <div class="stat-card">
+
+
+                <div class="stat-icon">
+                    👨
+                </div>
+
+
+                <div class="stat-information">
+
+                    <p>
+                        WANAUME
+                    </p>
+
+
+                    <h2>
+                        {{ wanaume }}
+                    </h2>
+
+
+                    <span>
+                        Waumini wanaume
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+
+            <div class="stat-card">
+
+
+                <div class="stat-icon">
+                    👩
+                </div>
+
+
+                <div class="stat-information">
+
+                    <p>
+                        WANAWAKE
+                    </p>
+
+
+                    <h2>
+                        {{ wanawake }}
+                    </h2>
+
+
+                    <span>
+                        Waumini wanawake
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+
+            <div class="stat-card">
+
+
+                <div class="stat-icon">
+                    📅
+                </div>
+
+
+                <div class="stat-information">
+
+                    <p>
+                        USAJILI WA {{ mwaka }}
+                    </p>
+
+
+                    <h2>
+                        {{ waliosajiliwa_mwaka_huu }}
+                    </h2>
+
+
+                    <span>
+                        Waliosajiliwa mwaka huu
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <section class="quick-section">
+
+
+            <h2>
+                Waumini kwa Makazi
+            </h2>
+
+
+            <p>
+                Idadi ya waumini kulingana na maeneo yao ya makazi.
+            </p>
+
+
+
+            <div class="residence-list">
+
+
+                {% if makazi %}
+
+
+                    {% for eneo in makazi %}
+
+
+                        <div class="residence-card">
+
+
+                            <div class="residence-information">
+
+
+                                <span class="residence-icon">
+                                    📍
+                                </span>
+
+
+                                <div>
+
+                                    <h3>
+                                        {{ eneo["makazi"] }}
+                                    </h3>
+
+
+                                    <p>
+                                        Waumini waliosajiliwa
+                                    </p>
+
+                                </div>
+
+
+                            </div>
+
+
+
+                            <div class="residence-count">
+
+                                {{ eneo["idadi"] }}
+
+                            </div>
+
+
+                        </div>
+
+
+                    {% endfor %}
+
+
+                {% else %}
+
+
+                    <div class="empty-residence">
+
+                        Hakuna taarifa za makazi bado.
+
+                    </div>
+
+
+                {% endif %}
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <section class="quick-section">
+
+
+            <h2>
+                Vitendo vya Haraka
+            </h2>
+
+
+            <p>
+                Chagua unachotaka kufanya.
+            </p>
+
+
+
+            <div class="action-grid">
+
+
+                <a
+                    href="{{ url_for('register') }}"
+                    class="action-card"
+                >
+
+
+                    <div class="action-icon">
+                        +
+                    </div>
+
+
+                    <div>
+
+                        <h3>
+                            Sajili muumini
+                        </h3>
+
+
+                        <p>
+                            Ongeza muumini mpya
+                            kwenye mfumo.
+                        </p>
+
+                    </div>
+
+
+                </a>
+
+
+
+                <a
+                    href="{{ url_for('members') }}"
+                    class="action-card"
+                >
+
+
+                    <div class="action-icon">
+                        👥
+                    </div>
+
+
+                    <div>
+
+                        <h3>
+                            Orodha ya Waumini
+                        </h3>
+
+
+                        <p>
+                            Angalia na tafuta
+                            waumini waliosajiliwa.
+                        </p>
+
+                    </div>
+
+
+                </a>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        {% if can_view_admins or can_view_audit %}
+
+
+            <section class="quick-section">
+
+
+                <h2>
+                    Admin & Security
+                </h2>
+
+
+                <p>
+                    Usimamizi wa mfumo, akaunti za wasimamizi
+                    na usalama wa shughuli za mfumo.
+                </p>
+
+
+
+                <div class="action-grid">
+
+
+                    {% if can_view_admins %}
+
+                        <a
+                            href="{{ url_for('admins') }}"
+                            class="action-card"
+                        >
+
+                            <div class="action-icon">
+                                👤
+                            </div>
+
+                            <div>
+
+                                <h3>
+                                    Administrators
+                                </h3>
+
+                                <p>
+                                    Angalia na simamia
+                                    akaunti za wasimamizi.
+                                </p>
+
+                            </div>
+
+                        </a>
+
+                    {% endif %}
+
+
+
+                    {% if can_create_admins %}
+
+                        <a
+                            href="{{ url_for('create_admin') }}"
+                            class="action-card"
+                        >
+
+                            <div class="action-icon">
+                                +
+                            </div>
+
+                            <div>
+
+                                <h3>
+                                    Create Administrator
+                                </h3>
+
+                                <p>
+                                    Tengeneza akaunti mpya
+                                    ya administrator.
+                                </p>
+
+                            </div>
+
+                        </a>
+
+                    {% endif %}
+
+
+
+                    <a
+                        href="{{ url_for('change_password') }}"
+                        class="action-card"
+                    >
+
+                        <div class="action-icon">
+                            🔑
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Change Password
+                            </h3>
+
+                            <p>
+                                Badilisha password yako
+                                ya mfumo.
+                            </p>
+
+                        </div>
+
+                    </a>
+
+
+
+                    {% if can_view_audit %}
+
+                        <a
+                            href="{{ url_for('audit_logs') }}"
+                            class="action-card"
+                        >
+
+                            <div class="action-icon">
+                                📋
+                            </div>
+
+                            <div>
+
+                                <h3>
+                                    Audit Logs
+                                </h3>
+
+                                <p>
+                                    Fuatilia shughuli
+                                    zilizofanyika kwenye mfumo.
+                                </p>
+
+                            </div>
+
+                        </a>
+
+                    {% endif %}
+
+
+                </div>
+
+
+            </section>
+
+
+        {% endif %}
+
+
+    </main>
+
+
+</body>
+
+</html>

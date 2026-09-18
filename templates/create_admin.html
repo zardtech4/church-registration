@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+
+<html lang="sw">
+
+<head>
+
+ 
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    Create Administrator - Usajili wa Waumini
+</title>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+ 
+
+</head>
+
+<body>
+
+ 
+<nav class="navbar">
+
+    <div class="nav-brand">
+        USAJILI WA WAUMINI
+    </div>
+
+    <div class="nav-links">
+
+        <a href="{{ url_for('dashboard') }}">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('register') }}">
+            Sajili
+        </a>
+
+        <a href="{{ url_for('members') }}">
+            Waumini
+        </a>
+
+        {% if can_view_admins %}
+
+            <a href="{{ url_for('admins') }}">
+                Admin & Security
+            </a>
+
+        {% endif %}
+
+        <a href="{{ url_for('logout') }}">
+            Toka
+        </a>
+
+    </div>
+
+</nav>
+
+
+<main class="create-admin-container">
+
+    <div class="create-admin-header">
+
+        <div>
+
+            <span class="dashboard-label">
+                ADMIN & SECURITY
+            </span>
+
+            <h1>
+                Create Administrator
+            </h1>
+
+            <p>
+                Tengeneza akaunti mpya ya msimamizi
+                wa mfumo.
+            </p>
+
+        </div>
+
+        <a
+            href="{{ url_for('admins') }}"
+            class="secondary-button"
+        >
+            ← RUDI ADMIN MANAGEMENT
+        </a>
+
+    </div>
+
+
+    {% if error %}
+
+        <div class="create-admin-error">
+
+            <span class="create-admin-error-icon">
+                !
+            </span>
+
+            <div>
+
+                <strong>
+                    Imeshindikana kuunda administrator
+                </strong>
+
+                <p>
+                    {{ error }}
+                </p>
+
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+    <div class="create-admin-layout">
+
+
+        <section class="create-admin-card">
+
+
+            <div class="create-admin-card-header">
+
+                <div class="create-admin-icon">
+                    👤
+                </div>
+
+                <div>
+
+                    <h2>
+                        Administrator Details
+                    </h2>
+
+                    <p>
+                        Jaza taarifa za akaunti mpya.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                method="POST"
+                action="{{ url_for('create_admin') }}"
+                class="create-admin-form"
+            >
+
+
+                <div class="create-admin-field">
+
+                    <label for="full_name">
+                        Jina Kamili
+                    </label>
+
+                    <input
+                        type="text"
+                        id="full_name"
+                        name="full_name"
+                        placeholder="Mfano: John Michael"
+                        value="{{ form_data.full_name if form_data else '' }}"
+                        autocomplete="name"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="create-admin-field">
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="Mfano: john_admin"
+                        value="{{ form_data.username if form_data else '' }}"
+                        autocomplete="username"
+                        required
+                    >
+
+                    <small>
+                        Username itatumika wakati wa kuingia
+                        kwenye mfumo.
+                    </small>
+
+                </div>
+
+
+                <div class="create-admin-field">
+
+                    <label for="email">
+
+                        Email
+
+                        <span>
+                            Hiari
+                        </span>
+
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Mfano: john@example.com"
+                        value="{{ form_data.email if form_data else '' }}"
+                        autocomplete="email"
+                    >
+
+                </div>
+
+
+                <div class="create-admin-divider"></div>
+
+
+                <div class="create-admin-field">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Ingiza password"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+
+                    <small>
+                        Password lazima iwe na angalau
+                        characters 8.
+                    </small>
+
+                </div>
+
+
+                <div class="create-admin-field">
+
+                    <label for="role">
+                        Role
+                    </label>
+
+                    <select
+                        id="role"
+                        name="role"
+                        required
+                    >
+
+                        <option
+                            value="admin"
+                            {% if form_data and form_data.role == "admin" %}
+                                selected
+                            {% endif %}
+                        >
+                            Admin
+                        </option>
+
+
+                        <option
+                            value="secretary"
+                            {% if form_data and form_data.role == "secretary" %}
+                                selected
+                            {% endif %}
+                        >
+                            Secretary
+                        </option>
+
+
+                        <option
+                            value="treasurer"
+                            {% if form_data and form_data.role == "treasurer" %}
+                                selected
+                            {% endif %}
+                        >
+                            Treasurer
+                        </option>
+
+
+                        {% if is_superadmin %}
+
+                            <option
+                                value="superadmin"
+                                {% if form_data and form_data.role == "superadmin" %}
+                                    selected
+                                {% endif %}
+                            >
+                                Superadmin
+                            </option>
+
+                        {% endif %}
+
+                    </select>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="primary-button create-admin-submit"
+                >
+                    CREATE ADMINISTRATOR
+                </button>
+
+
+            </form>
+
+        </section>
+
+
+        <aside class="create-admin-sidebar">
+
+
+            <div class="role-card">
+
+
+                <div class="role-card-header">
+
+                    <span class="role-card-icon">
+                        🛡️
+                    </span>
+
+                    <div>
+
+                        <h2>
+                            Roles & Access
+                        </h2>
+
+                        <p>
+                            Kila role ina permissions tofauti.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="role-item">
+
+                    <div class="role-item-top">
+
+                        <strong>
+                            Admin
+                        </strong>
+
+                        <span>
+                            GENERAL
+                        </span>
+
+                    </div>
+
+                    <p>
+                        Anaweza kusimamia waumini na
+                        kuona sehemu za msingi za mfumo.
+                    </p>
+
+                </div>
+
+
+                <div class="role-item">
+
+                    <div class="role-item-top">
+
+                        <strong>
+                            Secretary
+                        </strong>
+
+                        <span>
+                            MEMBERS
+                        </span>
+
+                    </div>
+
+                    <p>
+                        Anaweza kusajili, kuona na
+                        kuhariri taarifa za waumini.
+                    </p>
+
+                </div>
+
+
+                <div class="role-item">
+
+                    <div class="role-item-top">
+
+                        <strong>
+                            Treasurer
+                        </strong>
+
+                        <span>
+                            LIMITED
+                        </span>
+
+                    </div>
+
+                    <p>
+                        Ina permissions maalum kulingana
+                        na mahitaji ya mfumo.
+                    </p>
+
+                </div>
+
+
+                {% if is_superadmin %}
+
+                    <div class="role-item role-item-superadmin">
+
+                        <div class="role-item-top">
+
+                            <strong>
+                                Superadmin
+                            </strong>
+
+                            <span>
+                                FULL ACCESS
+                            </span>
+
+                        </div>
+
+                        <p>
+                            Ana access kamili kwenye
+                            mfumo na usimamizi wa
+                            administrators.
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+
+            </div>
+
+
+            <div class="security-notice">
+
+                <div class="security-notice-icon">
+                    🔒
+                </div>
+
+                <div>
+
+                    <h3>
+                        Security
+                    </h3>
+
+                    <p>
+                        Password ya administrator
+                        inahifadhiwa kama secure hash,
+                        si kama plain text.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+        </aside>
+
+
+    </div>
+
+</main>
+ 
+
+</body>
+
+</html>

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+church.db
+church_backup.db
+instance/

@@ -1,0 +1,358 @@
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+
+body {
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background: #f4f6f8;
+
+    color: #1f2937;
+
+    min-height: 100vh;
+
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+.navbar {
+
+    width: 100%;
+
+    background: #123c69;
+
+    color: white;
+
+    padding: 16px 30px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.12);
+
+}
+
+
+.nav-brand {
+
+    font-size: 20px;
+
+    font-weight: bold;
+
+}
+
+
+.nav-links {
+
+    display: flex;
+
+    gap: 25px;
+
+}
+
+
+.nav-links a {
+
+    color: white;
+
+    text-decoration: none;
+
+    font-size: 15px;
+
+    font-weight: 500;
+
+    transition: 0.2s;
+
+}
+
+
+.nav-links a:hover {
+
+    opacity: 0.75;
+
+}
+
+
+/* =========================================================
+   PAGE CONTAINER
+========================================================= */
+
+.page-container {
+
+    width: 100%;
+
+    min-height: calc(100vh - 65px);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: flex-start;
+
+    padding: 50px 20px;
+
+}
+
+
+/* =========================================================
+   FORM CARD
+========================================================= */
+
+.form-card {
+
+    width: 100%;
+
+    max-width: 600px;
+
+    background: white;
+
+    padding: 35px;
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.08);
+
+}
+
+
+/* =========================================================
+   FORM HEADER
+========================================================= */
+
+.form-header {
+
+    text-align: center;
+
+    margin-bottom: 30px;
+
+}
+
+
+.form-header h1 {
+
+    font-size: 28px;
+
+    margin-bottom: 8px;
+
+    color: #123c69;
+
+}
+
+
+.form-header p {
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+}
+
+
+/* =========================================================
+   FORM GROUP
+========================================================= */
+
+.form-group {
+
+    margin-bottom: 20px;
+
+}
+
+
+.form-group label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-weight: 600;
+
+    font-size: 14px;
+
+    color: #374151;
+
+}
+
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+.form-group input,
+.form-group select {
+
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 8px;
+
+    font-size: 15px;
+
+    background: white;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+
+}
+
+
+.form-group input:focus,
+.form-group select:focus {
+
+    border-color: #123c69;
+
+    box-shadow:
+        0 0 0 3px rgba(18, 60, 105, 0.12);
+
+}
+
+
+/* =========================================================
+   FILE INPUT
+========================================================= */
+
+.form-group input[type="file"] {
+
+    padding: 10px;
+
+    cursor: pointer;
+
+}
+
+
+.form-group small {
+
+    display: block;
+
+    margin-top: 6px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+}
+
+
+/* =========================================================
+   PRIMARY BUTTON
+========================================================= */
+
+.primary-button {
+
+    width: 100%;
+
+    padding: 14px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: #123c69;
+
+    color: white;
+
+    font-size: 15px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s,
+        transform 0.1s;
+
+}
+
+
+.primary-button:hover {
+
+    background: #0d2f52;
+
+}
+
+
+.primary-button:active {
+
+    transform: scale(0.98);
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 650px) {
+
+    .navbar {
+
+        padding: 15px 18px;
+
+        flex-direction: column;
+
+        gap: 12px;
+
+    }
+
+
+    .nav-links {
+
+        gap: 15px;
+
+        flex-wrap: wrap;
+
+        justify-content: center;
+
+    }
+
+
+    .page-container {
+
+        padding: 25px 15px;
+
+    }
+
+
+    .form-card {
+
+        padding: 25px 20px;
+
+        border-radius: 10px;
+
+    }
+
+
+    .form-header h1 {
+
+        font-size: 24px;
+
+    }
+
+}
+

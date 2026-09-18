@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+
+<html lang="sw">
+
+<head>
+
+ 
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    Audit Logs - Usajili wa Waumini
+</title>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+ 
+
+</head>
+
+<body>
+
+ 
+<nav class="navbar">
+
+    <div class="nav-brand">
+        USAJILI WA WAUMINI
+    </div>
+
+    <div class="nav-links">
+
+        <a href="{{ url_for('dashboard') }}">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('register') }}">
+            Sajili
+        </a>
+
+        <a href="{{ url_for('members') }}">
+            Waumini
+        </a>
+
+        {% if can_view_admins %}
+
+            <a href="{{ url_for('admins') }}">
+                Admin & Security
+            </a>
+
+        {% endif %}
+
+        <a href="{{ url_for('logout') }}">
+            Toka
+        </a>
+
+    </div>
+
+</nav>
+
+
+<main class="audit-container">
+
+
+    <div class="audit-header">
+
+        <div>
+
+            <span class="dashboard-label">
+                ADMIN & SECURITY
+            </span>
+
+            <h1>
+                Audit Logs
+            </h1>
+
+            <p>
+                Rekodi za shughuli muhimu zilizofanyika
+                ndani ya mfumo.
+            </p>
+
+        </div>
+
+        <a
+            href="{{ url_for('admins') }}"
+            class="secondary-button"
+        >
+            ← ADMIN MANAGEMENT
+        </a>
+
+    </div>
+
+
+    <section class="audit-summary">
+
+        <div class="audit-summary-card">
+
+            <div class="audit-summary-icon">
+                📋
+            </div>
+
+            <div>
+
+                <span>
+                    LOGGED ACTIVITIES
+                </span>
+
+                <strong>
+                    {{ logs|length }}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="audit-summary-card">
+
+            <div class="audit-summary-icon">
+                🔐
+            </div>
+
+            <div>
+
+                <span>
+                    SECURITY RECORD
+                </span>
+
+                <strong>
+                    ACTIVE
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="audit-summary-card">
+
+            <div class="audit-summary-icon">
+                🛡️
+            </div>
+
+            <div>
+
+                <span>
+                    RETENTION
+                </span>
+
+                <strong>
+                    200
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="audit-card">
+
+
+        <div class="audit-card-header">
+
+            <div>
+
+                <span class="dashboard-label">
+                    SYSTEM ACTIVITY
+                </span>
+
+                <h2>
+                    Activity History
+                </h2>
+
+                <p>
+                    Shughuli 200 za mwisho zilizorekodiwa
+                    na mfumo.
+                </p>
+
+            </div>
+
+            <div class="audit-live-status">
+
+                <span class="audit-live-dot"></span>
+
+                AUDIT ACTIVE
+
+            </div>
+
+        </div>
+
+
+        {% if logs %}
+
+            <div class="audit-table-wrapper">
+
+                <table class="audit-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                TIME
+                            </th>
+
+                            <th>
+                                ADMINISTRATOR
+                            </th>
+
+                            <th>
+                                ACTION
+                            </th>
+
+                            <th>
+                                DESCRIPTION
+                            </th>
+
+                            <th>
+                                IP ADDRESS
+                            </th>
+
+                            <th>
+                                DETAILS
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for log in logs %}
+
+                            <tr>
+
+                                <td>
+
+                                    <span class="audit-time">
+                                        {{ log["created_at"] }}
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if log["username"] %}
+
+                                        <div class="audit-admin">
+
+                                            <div class="audit-avatar">
+
+                                                {{ log["username"][0]|upper }}
+
+                                            </div>
+
+                                            <div>
+
+                                                <strong>
+                                                    {{ log["full_name"] or log["username"] }}
+                                                </strong>
+
+                                                <small>
+                                                    @{{ log["username"] }}
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+                                    {% else %}
+
+                                        <div class="audit-public">
+
+                                            <span>
+                                                🌐
+                                            </span>
+
+                                            <div>
+
+                                                <strong>
+                                                    Public User
+                                                </strong>
+
+                                                <small>
+                                                    No admin session
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+
+                                    {% set action_class = log["action"].replace("_", "-") %}
+
+                                    <span
+                                        class="audit-action audit-action-{{ action_class }}"
+                                    >
+
+                                        {{ log["action"].replace("_", " ")|upper }}
+
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+
+                                    <div class="audit-description">
+
+                                        {{ log["description"] or "—" }}
+
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    <span class="audit-ip">
+
+                                        {{ log["ip_address"] or "—" }}
+
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if log["details"] %}
+
+                                        <span class="audit-details">
+
+                                            {{ log["details"] }}
+
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="audit-no-details">
+                                            —
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="audit-empty">
+
+                <div class="audit-empty-icon">
+                    📋
+                </div>
+
+                <h3>
+                    No Audit Logs Yet
+                </h3>
+
+                <p>
+                    Hakuna shughuli zilizorekodiwa
+                    kwenye mfumo bado.
+                </p>
+
+            </div>
+
+        {% endif %}
+
+
+    </section>
+
+
+    <section class="audit-information">
+
+
+        <div class="audit-information-header">
+
+            <div class="audit-information-icon">
+                🔒
+            </div>
+
+            <div>
+
+                <h2>
+                    About Audit Logs
+                </h2>
+
+                <p>
+                    Audit logs husaidia kufuatilia
+                    shughuli muhimu za mfumo na
+                    kuongeza accountability.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="audit-information-grid">
+
+
+            <div class="audit-info-item">
+
+                <strong>
+                    Authentication
+                </strong>
+
+                <p>
+                    Login, logout na password
+                    changes zinaweza kurekodiwa.
+                </p>
+
+            </div>
+
+
+            <div class="audit-info-item">
+
+                <strong>
+                    Member Management
+                </strong>
+
+                <p>
+ 

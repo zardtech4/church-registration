@@ -473,6 +473,65 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    init_database()
+
+    if get_current_admin():
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        db = get_db()
+
+        admin = db.execute("""
+            SELECT
+                admins.*,
+                roles.name AS role_name
+            FROM admins
+            LEFT JOIN roles
+                ON admins.role_id = roles.id
+            WHERE admins.username = ?
+        """, (username,)).fetchone()
+
+        if (
+            admin
+            and admin["active"]
+            and check_password_hash(
+                admin["password_hash"],
+                password
+            )
+        ):
+            session.clear()
+            session["admin_id"] = admin["id"]
+
+            db.execute("""
+                UPDATE admins
+                SET last_login = ?
+                WHERE id = ?
+            """, (
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                admin["id"]
+            ))
+
+            db.commit()
+            db.close()
+
+            log_action(
+                "login",
+                f"Admin {username} aliingia kwenye mfumo."
+            )
+
+            return redirect(url_for("dashboard"))
+
+        db.close()
+
+        return render_template(
+            "login.html",
+            error="Username au password si sahihi."
+        )
+
+    return render_template("login.html")
     if get_current_admin():
         return redirect(url_for("dashboard"))
 

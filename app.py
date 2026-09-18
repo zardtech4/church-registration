@@ -8,8 +8,13 @@ from functools import wraps
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key")
+app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "church.db")

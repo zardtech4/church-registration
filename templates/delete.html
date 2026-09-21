@@ -84,14 +84,14 @@
 
             <div class="delete-member">
 
-                {% if mtu["picha"] %}
+                {% if  member["picha"] %}
 
                     <img
                         src="{{ url_for(
                             'static',
-                            filename='uploads/' + mtu['picha']
+                            filename='uploads/' +  member['picha']
                         ) }}"
-                        alt="Picha ya {{ mtu['jina_kamili'] }}"
+                        alt="Picha ya {{  member['jina_kamili'] }}"
                         class="delete-photo"
                     >
 
@@ -107,7 +107,7 @@
                 <div class="delete-details">
 
                     <h2>
-                        {{ mtu["jina_kamili"] }}
+                        {{  member["jina_kamili"] }}
                     </h2>
 
                     <p>
@@ -117,7 +117,7 @@
                         </span>
 
                         <strong>
-                            {{ mtu["namba_ya_usajili"] }}
+                            {{  member["namba_ya_usajili"] }}
                         </strong>
 
                     </p>
@@ -130,7 +130,7 @@
                         </span>
 
                         <strong>
-                            {{ mtu["namba_ya_sim"] }}
+                            {{  member["namba_ya_sim"] }}
                         </strong>
 
                     </p>
@@ -143,7 +143,7 @@
                         </span>
 
                         <strong>
-                            {{ mtu["makazi"] }}
+                            {{  member["makazi"] }}
                         </strong>
 
                     </p>

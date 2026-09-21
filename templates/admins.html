@@ -52,6 +52,11 @@
                 </a>
 
             {% endif %}
+            {% if has_permission("finance.view") %}
+    <a href="{{ url_for('finance_dashboard') }}">
+        Fedha
+    </a>
+{% endif %}
 
             <a href="{{ url_for('admins') }}">
                 Admin & Security

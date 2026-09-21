@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="sw">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Finance |
+        {{ church_settings["church_name"] if church_settings else "Kanisa" }}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="nav-brand">
+
+            {% if church_settings and church_settings["church_name"] %}
+
+                {{ church_settings["church_name"] }}
+
+            {% else %}
+
+                KANISA
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="nav-links">
+
+            <a href="{{ url_for('dashboard') }}">
+                Dashboard
+            </a>
+
+            <a href="{{ url_for('members') }}">
+                Waumini
+            </a>
+
+            <a href="{{ url_for('announcements') }}">
+                Matangazo
+            </a>
+
+            <a
+                href="{{ url_for('finance_dashboard') }}"
+                class="active"
+            >
+                Fedha
+            </a>
+
+            <a href="{{ url_for('change_password') }}">
+                Badili Password
+            </a>
+
+            <a href="{{ url_for('logout') }}">
+                Logout
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <main class="page-container finance-dashboard-page">
+
+
+        <!-- PAGE HEADER -->
+
+        <div class="finance-dashboard-header">
+
+            <div>
+
+                <span class="finance-dashboard-label">
+                    USIMAMIZI WA FEDHA
+                </span>
+
+                <h1>
+                    Finance Dashboard
+                </h1>
+
+                <p>
+                    Muhtasari wa mapato na matumizi ya kanisa.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- FINANCE SUMMARY -->
+
+        <section class="finance-summary">
+
+
+            <!-- TOTAL INCOME -->
+
+            <div class="finance-card">
+
+                <span>
+                    JUMLA YA MAPATO
+                </span>
+
+                <strong>
+                    TZS {{ "{:,.2f}".format(total_income) }}
+                </strong>
+
+            </div>
+
+
+            <!-- TOTAL EXPENSES -->
+
+            <div class="finance-card">
+
+                <span>
+                    JUMLA YA MATUMIZI
+                </span>
+
+                <strong>
+                    TZS {{ "{:,.2f}".format(total_expenses) }}
+                </strong>
+
+            </div>
+
+
+            <!-- BALANCE -->
+
+            <div class="finance-card">
+
+                <span>
+                    SALIO
+                </span>
+
+                <strong>
+                    TZS {{ "{:,.2f}".format(balance) }}
+                </strong>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- FINANCE ACTIONS -->
+
+        <section class="finance-actions">
+
+
+            <!-- ADD INCOME -->
+
+            <a
+                href="{{ url_for('add_income') }}"
+                class="primary-button"
+            >
+                + ONGEZA MAPATO
+            </a>
+
+
+            <!-- ADD EXPENSE -->
+
+            <a
+                href="{{ url_for('add_expense') }}"
+                class="secondary-button"
+            >
+                + ONGEZA MATUMIZI
+            </a>
+
+
+            <!-- REPORTS -->
+
+            <a
+                href="{{ url_for('finance_reports') }}"
+                class="secondary-button"
+            >
+                📊 RIPOTI
+            </a>
+
+
+            <!-- ALL TRANSACTIONS -->
+
+            <a
+                href="{{ url_for('finance_transactions') }}"
+                class="secondary-button"
+            >
+                📋 MIAMALA YOTE
+            </a>
+
+        </section>
+
+
+
+        <!-- RECENT TRANSACTIONS -->
+
+        <section class="finance-table-section">
+
+
+            <div class="section-heading">
+
+                <span>
+                    TRANSACTIONS
+                </span>
+
+                <h2>
+                    Miamala ya Hivi Karibuni
+                </h2>
+
+            </div>
+
+
+
+            {% if recent_transactions %}
+
+
+                <div class="finance-table-wrapper">
+
+                    <table class="finance-table">
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Tarehe
+                                </th>
+
+                                <th>
+                                    Aina
+                                </th>
+
+                                <th>
+                                    Category
+                                </th>
+
+                                <th>
+                                    Mwanachama
+                                </th>
+
+                                <th>
+                                    Maelezo
+                                </th>
+
+                                <th>
+                                    Kiasi
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+
+                        <tbody>
+
+
+                            {% for transaction in recent_transactions %}
+
+
+                                <tr>
+
+
+                                    <!-- DATE -->
+
+                                    <td>
+                                        {{ transaction["transaction_date"] }}
+                                    </td>
+
+
+
+                                    <!-- TYPE -->
+
+                                    <td>
+
+                                        {% if transaction["transaction_type"] == "income" %}
+
+                                            <span class="finance-income">
+                                                MAPATO
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="finance-expense">
+                                                MATUMIZI
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+
+                                    <!-- CATEGORY -->
+
+                                    <td>
+                                        {{ transaction["category"] }}
+                                    </td>
+
+
+
+                                    <!-- MEMBER -->
+
+                                    <td>
+
+                                        {% if transaction["member_name"] %}
+
+                                            {{ transaction["member_name"] }}
+
+                                        {% else %}
+
+                                            —
+
+                                        {% endif %}
+
+                                    </td>
+
+
+
+                                    <!-- DESCRIPTION -->
+
+                                    <td>
+
+                                        {% if transaction["description"] %}
+
+                                            {{ transaction["description"] }}
+
+                                        {% else %}
+
+                                            —
+
+                                        {% endif %}
+
+                                    </td>
+
+
+
+                                    <!-- AMOUNT -->
+
+                                    <td>
+
+                                        TZS
+                                        {{ "{:,.2f}".format(transaction["amount"]) }}
+
+                                    </td>
+
+
+                                </tr>
+
+
+                            {% endfor %}
+
+
+                        </tbody>
+
+
+                    </table>
+
+                </div>
+
+
+            {% else %}
+
+
+                <!-- EMPTY STATE -->
+
+                <div class="finance-empty">
+
+                    <div class="home-card-icon">
+                        💰
+                    </div>
+
+                    <h3>
+                        Hakuna miamala bado
+                    </h3>
+
+                    <p>
+                        Miamala ya fedha itakapoingizwa,
+                        itaonekana hapa.
+                    </p>
+
+                </div>
+
+
+            {% endif %}
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- FOOTER -->
+
+    <footer class="home-footer">
+
+
+        <div>
+
+            {% if church_settings and church_settings["church_name"] %}
+
+                {{ church_settings["church_name"] }}
+
+            {% else %}
+
+                KANISA
+
+            {% endif %}
+
+        </div>
+
+
+        <p>
+            Mfumo rasmi wa kanisa
+        </p>
+
+
+    </footer>
+
+
+</body>
+
+</html>

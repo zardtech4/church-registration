@@ -14,7 +14,8 @@ from flask import (
     render_template,
     request,
     session,
-    url_for
+    url_for,
+    jsonify
 )
 
 from dotenv import load_dotenv
@@ -1811,6 +1812,226 @@ def dashboard():
 # MEMBERS
 # ============================================================
 
+@app.route("/finance")
+@login_required
+@permission_required("finance.view")
+def finance_dashboard():
+
+    db = get_db()
+
+    total_income = db.execute(
+        """
+        SELECT COALESCE(
+            SUM(amount),
+            0
+        ) AS total
+        FROM finance_transactions
+        WHERE transaction_type = 'income'
+        """
+    ).fetchone()["total"]
+
+    total_expenses = db.execute(
+        """
+        SELECT COALESCE(
+            SUM(amount),
+            0
+        ) AS total
+        FROM finance_transactions
+        WHERE transaction_type = 'expense'
+        """
+    ).fetchone()["total"]
+
+    balance = total_income - total_expenses
+
+    recent_transactions = db.execute(
+        """
+        SELECT
+            f.id,
+            f.transaction_type,
+            f.category,
+            f.amount,
+            f.description,
+            f.transaction_date,
+            f.member_id,
+            w.jina_kamili AS member_name
+        FROM finance_transactions f
+        LEFT JOIN waumini w
+            ON f.member_id = w.id
+        ORDER BY
+            f.transaction_date DESC,
+            f.id DESC
+        LIMIT 20
+        """
+    ).fetchall()
+
+    return render_template(
+        "finance_dashboard.html",
+        total_income=total_income,
+        total_expenses=total_expenses,
+        balance=balance,
+        recent_transactions=recent_transactions
+    )
+
+@app.route("/finance/search-members")
+@login_required
+@permission_required("finance.create")
+def search_finance_members():
+
+    query = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    if len(query) < 2:
+        return jsonify([])
+
+    db = get_db()
+
+    members = db.execute(
+        """
+        SELECT
+            id,
+            jina_kamili,
+            namba_ya_usajili
+        FROM waumini
+        WHERE
+            jina_kamili ILIKE %s
+            OR namba_ya_usajili ILIKE %s
+        ORDER BY jina_kamili ASC
+        LIMIT 10
+        """,
+        (
+            f"%{query}%",
+            f"%{query}%"
+        )
+    ).fetchall()
+
+    return jsonify(
+        [
+            {
+                "id": member["id"],
+                "jina_kamili": member["jina_kamili"],
+                "namba_ya_usajili": member["namba_ya_usajili"]
+            }
+            for member in members
+        ]
+    )
+
+
+
+@app.route("/finance/income", methods=["GET", "POST"])
+@login_required
+@permission_required("finance.create")
+def add_income():
+
+    db = get_db()
+
+    if request.method == "POST":
+
+        category = request.form.get("category", "").strip()
+        member_id = request.form.get("member_id", "").strip()
+        amount = request.form.get("amount", "").strip()
+        transaction_date = request.form.get("transaction_date", "").strip()
+        description = request.form.get("description", "").strip()
+
+        # Basic validation
+        if not category:
+            return "Aina ya mapato inahitajika.", 400
+
+        if not amount:
+            return "Kiasi kinahitajika.", 400
+
+        if not transaction_date:
+            return "Tarehe inahitajika.", 400
+
+        try:
+            amount = float(amount)
+        except ValueError:
+            return "Kiasi si sahihi.", 400
+
+        if amount <= 0:
+            return "Kiasi lazima kiwe zaidi ya sifuri.", 400
+
+        # Convert empty member ID to NULL
+        if member_id == "":
+            member_id = None
+        else:
+            try:
+                member_id = int(member_id)
+            except ValueError:
+                return "Muumini aliyechaguliwa si sahihi.", 400
+
+            # Make sure the member actually exists
+            member_exists = db.execute(
+                """
+                SELECT id
+                FROM waumini
+                WHERE id = %s
+                """,
+                (member_id,)
+            ).fetchone()
+
+            if not member_exists:
+                return "Muumini huyo hakupatikana.", 400
+
+        # Save transaction
+        db.execute(
+            """
+            INSERT INTO finance_transactions (
+                member_id,
+                transaction_type,
+                category,
+                amount,
+                description,
+                transaction_date,
+                recorded_by
+            )
+            VALUES (
+                %s,
+                'income',
+                %s,
+                %s,
+                %s,
+                %s,
+                %s
+            )
+            """,
+            (
+                member_id,
+                category,
+                amount,
+                description or None,
+                transaction_date,
+                session["admin_id"]
+            )
+        )
+
+        log_action(
+            "CREATE_FINANCE",
+            f"Income recorded: {category}, TZS {amount:,.2f}"
+        )
+
+        return redirect(
+            url_for("finance_dashboard")
+        )
+
+    # Load members for the dropdown
+    members = db.execute(
+        """
+        SELECT
+            id,
+            namba_ya_usajili,
+            jina_kamili
+        FROM waumini
+        ORDER BY jina_kamili ASC
+        """
+    ).fetchall()
+
+    return render_template(
+        "add_income.html",
+        members=members
+    )
+
 @app.route("/members")
 @login_required
 @permission_required("members.view")
@@ -1935,6 +2156,458 @@ def members():
         search=search,
         jinsia_filter=jinsia_filter,
         subzone_filter=subzone_filter
+    )
+
+@app.route("/finance/expenses", methods=["GET", "POST"])
+@login_required
+@permission_required("finance.create")
+def add_expense():
+
+    db = get_db()
+
+    if request.method == "POST":
+
+        category = request.form.get(
+            "category",
+            ""
+        ).strip()
+
+        amount = request.form.get(
+            "amount",
+            ""
+        ).strip()
+
+        transaction_date = request.form.get(
+            "transaction_date",
+            ""
+        ).strip()
+
+        description = request.form.get(
+            "description",
+            ""
+        ).strip()
+
+        # Basic validation
+        if not category:
+            return "Aina ya matumizi inahitajika.", 400
+
+        if not amount:
+            return "Kiasi kinahitajika.", 400
+
+        if not transaction_date:
+            return "Tarehe inahitajika.", 400
+
+        try:
+            amount = float(amount)
+
+        except ValueError:
+            return "Kiasi si sahihi.", 400
+
+        if amount <= 0:
+            return "Kiasi lazima kiwe zaidi ya sifuri.", 400
+
+        db.execute(
+            """
+            INSERT INTO finance_transactions (
+                member_id,
+                transaction_type,
+                category,
+                amount,
+                description,
+                transaction_date,
+                recorded_by
+            )
+            VALUES (
+                NULL,
+                'expense',
+                %s,
+                %s,
+                %s,
+                %s,
+                %s
+            )
+            """,
+            (
+                category,
+                amount,
+                description or None,
+                transaction_date,
+                session["admin_id"]
+            )
+        )
+
+        log_action(
+            "CREATE_FINANCE",
+            f"Expense recorded: {category}, TZS {amount:,.2f}"
+        )
+
+        return redirect(
+            url_for("finance_dashboard")
+        )
+
+    return render_template(
+        "add_expense.html"
+    )
+
+@app.route("/finance/reports")
+@login_required
+@permission_required("finance.reports")
+def finance_reports():
+
+    db = get_db()
+
+    start_date = request.args.get(
+        "start_date",
+        ""
+    ).strip()
+
+    end_date = request.args.get(
+        "end_date",
+        ""
+    ).strip()
+
+    # Base conditions
+    conditions = []
+    params = []
+
+    if start_date:
+        conditions.append(
+            "f.transaction_date >= %s"
+        )
+        params.append(start_date)
+
+    if end_date:
+        conditions.append(
+            "f.transaction_date <= %s"
+        )
+        params.append(end_date)
+
+    where_clause = ""
+
+    if conditions:
+        where_clause = (
+            "WHERE "
+            + " AND ".join(conditions)
+        )
+
+    # Summary
+    summary = db.execute(
+        f"""
+        SELECT
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN f.transaction_type = 'income'
+                        THEN f.amount
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS total_income,
+
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN f.transaction_type = 'expense'
+                        THEN f.amount
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS total_expenses
+
+        FROM finance_transactions f
+
+        {where_clause}
+        """,
+        tuple(params)
+    ).fetchone()
+
+    total_income = summary["total_income"]
+    total_expenses = summary["total_expenses"]
+
+    balance = (
+        total_income
+        - total_expenses
+    )
+
+    # Income by category
+        # Income by category
+
+    category_conditions = list(conditions)
+
+    category_conditions.append(
+        "f.transaction_type = 'income'"
+    )
+
+    income_where = (
+        "WHERE "
+        + " AND ".join(category_conditions)
+    )
+
+    income_categories = db.execute(
+        f"""
+        SELECT
+            category,
+            SUM(amount) AS total
+
+        FROM finance_transactions f
+
+        {income_where}
+
+        GROUP BY category
+
+        ORDER BY total DESC
+        """,
+        tuple(params)
+    ).fetchall()
+
+
+    # Expenses by category
+
+    category_conditions = list(conditions)
+
+    category_conditions.append(
+        "f.transaction_type = 'expense'"
+    )
+
+    expense_where = (
+        "WHERE "
+        + " AND ".join(category_conditions)
+    )
+
+    expense_categories = db.execute(
+        f"""
+        SELECT
+            category,
+            SUM(amount) AS total
+
+        FROM finance_transactions f
+
+        {expense_where}
+
+        GROUP BY category
+
+        ORDER BY total DESC
+        """,
+        tuple(params)
+    ).fetchall()
+    # Transactions
+    transactions = db.execute(
+        f"""
+        SELECT
+            f.id,
+            f.transaction_type,
+            f.category,
+            f.amount,
+            f.description,
+            f.transaction_date,
+            w.jina_kamili AS member_name
+
+        FROM finance_transactions f
+
+        LEFT JOIN waumini w
+            ON f.member_id = w.id
+
+        {where_clause}
+
+        ORDER BY
+            f.transaction_date DESC,
+            f.id DESC
+        """,
+        tuple(params)
+    ).fetchall()
+
+    return render_template(
+        "finance_reports.html",
+        start_date=start_date,
+        end_date=end_date,
+        total_income=total_income,
+        total_expenses=total_expenses,
+        balance=balance,
+        income_categories=income_categories,
+        expense_categories=expense_categories,
+        transactions=transactions
+    )
+
+@app.route("/finance/transactions")
+@login_required
+@permission_required("finance.view")
+def finance_transactions():
+
+    db = get_db()
+
+    transactions = db.execute(
+        """
+        SELECT
+            f.id,
+            f.transaction_type,
+            f.category,
+            f.amount,
+            f.description,
+            f.transaction_date,
+            f.member_id,
+            w.jina_kamili AS member_name,
+            a.username AS recorded_by
+        FROM finance_transactions f
+
+        LEFT JOIN waumini w
+            ON f.member_id = w.id
+
+        LEFT JOIN admins a
+            ON f.recorded_by = a.id
+
+        ORDER BY
+            f.transaction_date DESC,
+            f.id DESC
+        """
+    ).fetchall()
+
+    return render_template(
+        "finance_transactions.html",
+        transactions=transactions
+    )
+
+@app.route(
+    "/finance/transactions/<int:transaction_id>/edit",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("finance.edit")
+def edit_finance_transaction(transaction_id):
+
+    db = get_db()
+
+    transaction = db.execute(
+        """
+        SELECT
+            id,
+            member_id,
+            transaction_type,
+            category,
+            amount,
+            description,
+            transaction_date
+        FROM finance_transactions
+        WHERE id = %s
+        """,
+        (transaction_id,)
+    ).fetchone()
+
+    if not transaction:
+        return "Muamala haukupatikana.", 404
+
+    if request.method == "POST":
+
+        category = request.form.get(
+            "category",
+            ""
+        ).strip()
+
+        member_id = request.form.get(
+            "member_id",
+            ""
+        ).strip()
+
+        amount = request.form.get(
+            "amount",
+            ""
+        ).strip()
+
+        transaction_date = request.form.get(
+            "transaction_date",
+            ""
+        ).strip()
+
+        description = request.form.get(
+            "description",
+            ""
+        ).strip()
+
+        if not category:
+            return "Category inahitajika.", 400
+
+        if not amount:
+            return "Kiasi kinahitajika.", 400
+
+        if not transaction_date:
+            return "Tarehe inahitajika.", 400
+
+        try:
+            amount = float(amount)
+        except ValueError:
+            return "Kiasi si sahihi.", 400
+
+        if amount <= 0:
+            return "Kiasi lazima kiwe zaidi ya sifuri.", 400
+
+        if member_id == "":
+            member_id = None
+
+        else:
+            try:
+                member_id = int(member_id)
+
+            except ValueError:
+                return "Muumini aliyechaguliwa si sahihi.", 400
+
+            member_exists = db.execute(
+                """
+                SELECT id
+                FROM waumini
+                WHERE id = %s
+                """,
+                (member_id,)
+            ).fetchone()
+
+            if not member_exists:
+                return "Muumini huyo hakupatikana.", 400
+
+        db.execute(
+            """
+            UPDATE finance_transactions
+            SET
+                category = %s,
+                member_id = %s,
+                amount = %s,
+                description = %s,
+                transaction_date = %s
+            WHERE id = %s
+            """,
+            (
+                category,
+                member_id,
+                amount,
+                description or None,
+                transaction_date,
+                transaction_id
+            )
+        )
+
+        log_action(
+            "EDIT_FINANCE",
+            f"Finance transaction edited: ID {transaction_id}"
+        )
+
+        return redirect(
+            url_for("finance_transactions")
+        )
+
+    members = db.execute(
+        """
+        SELECT
+            id,
+            namba_ya_usajili,
+            jina_kamili
+        FROM waumini
+        ORDER BY jina_kamili ASC
+        """
+    ).fetchall()
+
+    return render_template(
+        "edit_finance_transaction.html",
+        transaction=transaction,
+        members=members
     )
 
 

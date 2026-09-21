@@ -1,0 +1,735 @@
+
+<!DOCTYPE html>
+<html lang="sw">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Ongeza Mapato | {{ church_settings['church_name'] if church_settings else 'Kanisa' }}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- ================================
+         NAVBAR
+         ================================ -->
+
+    <nav class="admin-navbar">
+
+        <div class="nav-brand">
+
+            {% if church_settings and church_settings['church_name'] %}
+
+                {{ church_settings['church_name'] }}
+
+            {% else %}
+
+                KANISA
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="nav-links">
+
+            <a href="{{ url_for('dashboard') }}">
+                Dashboard
+            </a>
+
+            <a href="{{ url_for('members') }}">
+                Waumini
+            </a>
+
+            <a href="{{ url_for('announcements') }}">
+                Matangazo
+            </a>
+
+            <a
+                href="{{ url_for('finance_dashboard') }}"
+                class="active"
+            >
+                Fedha
+            </a>
+
+            <a href="{{ url_for('change_password') }}">
+                Badili Password
+            </a>
+
+            <a href="{{ url_for('logout') }}">
+                Logout
+            </a>
+
+        </div>
+
+    </nav>
+
+
+
+    <!-- ================================
+         MAIN CONTENT
+         ================================ -->
+
+    <main class="finance-form-page">
+
+        <div class="finance-form-container">
+
+
+            <!-- HEADER -->
+
+            <div class="finance-form-header">
+
+                <div>
+
+                    <span class="finance-form-label">
+                        FEDHA
+                    </span>
+
+                    <h1>
+                        Ongeza Mapato
+                    </h1>
+
+                    <p>
+                        Sajili mapato ya kanisa kwa usahihi.
+                    </p>
+
+                </div>
+
+
+                <a
+                    href="{{ url_for('finance_dashboard') }}"
+                    class="finance-back-button"
+                >
+                    ← Rudi Fedha
+                </a>
+
+            </div>
+
+
+
+            <!-- ================================
+                 FORM
+                 ================================ -->
+
+            <form
+                method="POST"
+                class="finance-form"
+            >
+
+
+                <!-- ================================
+                     INCOME CATEGORY
+                     ================================ -->
+
+                <div class="form-group">
+
+                    <label for="category">
+                        Aina ya Mapato
+                    </label>
+
+                    <select
+                        id="category"
+                        name="category"
+                        required
+                    >
+
+                        <option value="">
+                            -- Chagua aina ya mapato --
+                        </option>
+
+                        <option value="Zaka">
+                            Zaka
+                        </option>
+
+                        <option value="Sadaka">
+                            Sadaka
+                        </option>
+
+                        <option value="Michango">
+                            Michango
+                        </option>
+
+                        <option value="Donations">
+                            Donations
+                        </option>
+
+                        <option value="Mapato Mengine">
+                            Mapato Mengine
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- ================================
+                     MEMBER SEARCH
+                     ================================ -->
+
+                <div class="form-group">
+
+                    <label for="member_search">
+
+                        Muumini
+
+                        <span class="optional">
+                            (Hiari)
+                        </span>
+
+                    </label>
+
+
+                    <!-- Visible search field -->
+
+                    <input
+                        type="text"
+                        id="member_search"
+                        name="member_search"
+                        autocomplete="off"
+                        placeholder="Tafuta kwa jina au namba ya usajili..."
+                    >
+
+
+                    <!-- Actual database member ID -->
+
+                    <input
+                        type="hidden"
+                        id="member_id"
+                        name="member_id"
+                        value=""
+                    >
+
+
+                    <!-- Search results -->
+
+                    <div
+                        id="member_search_results"
+                        class="member-search-results"
+                    ></div>
+
+
+                    <!-- Selected member -->
+
+                    <div
+                        id="selected_member"
+                        class="selected-member"
+                        style="display: none;"
+                    >
+
+                        <span id="selected_member_name"></span>
+
+                        <button
+                            type="button"
+                            id="clear_member"
+                            aria-label="Ondoa muumini"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+
+                    <small>
+                        Tafuta muumini kwa jina au namba ya usajili.
+                    </small>
+
+                </div>
+
+
+
+                <!-- ================================
+                     AMOUNT
+                     ================================ -->
+
+                <div class="form-group">
+
+                    <label for="amount">
+                        Kiasi
+                    </label>
+
+
+                    <div class="amount-input">
+
+                        <span>
+                            TZS
+                        </span>
+
+
+                        <input
+                            type="number"
+                            id="amount"
+                            name="amount"
+                            min="1"
+                            step="0.01"
+                            placeholder="0.00"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- ================================
+                     DATE
+                     ================================ -->
+
+                <div class="form-group">
+
+                    <label for="transaction_date">
+                        Tarehe
+                    </label>
+
+
+                    <input
+                        type="date"
+                        id="transaction_date"
+                        name="transaction_date"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- ================================
+                     DESCRIPTION
+                     ================================ -->
+
+                <div class="form-group">
+
+                    <label for="description">
+
+                        Maelezo
+
+                        <span class="optional">
+                            (Hiari)
+                        </span>
+
+                    </label>
+
+
+                    <textarea
+                        id="description"
+                        name="description"
+                        rows="4"
+                        maxlength="1000"
+                        placeholder="Andika maelezo ya muamala..."
+                    ></textarea>
+
+                </div>
+
+
+
+                <!-- ================================
+                     BUTTONS
+                     ================================ -->
+
+                <div class="finance-form-actions">
+
+                    <a
+                        href="{{ url_for('finance_dashboard') }}"
+                        class="finance-cancel-button"
+                    >
+                        Ghairi
+                    </a>
+
+
+                    <button
+                        type="submit"
+                        class="finance-submit-button"
+                    >
+                        + Hifadhi Mapato
+                    </button>
+
+                </div>
+
+
+            </form>
+
+        </div>
+
+    </main>
+
+
+
+    <!-- ================================
+         FOOTER
+         ================================ -->
+
+    <footer class="admin-footer">
+
+        <p>
+
+            {% if church_settings and church_settings['church_name'] %}
+
+                {{ church_settings['church_name'] }}
+
+            {% else %}
+
+                KANISA
+
+            {% endif %}
+
+        </p>
+
+    </footer>
+
+
+
+    <!-- ================================
+         MEMBER SEARCH JAVASCRIPT
+         ================================ -->
+
+    <script>
+
+        const memberSearch =
+            document.getElementById("member_search");
+
+        const memberId =
+            document.getElementById("member_id");
+
+        const resultsBox =
+            document.getElementById("member_search_results");
+
+        const selectedMember =
+            document.getElementById("selected_member");
+
+        const selectedMemberName =
+            document.getElementById("selected_member_name");
+
+        const clearMember =
+            document.getElementById("clear_member");
+
+
+        let searchTimeout = null;
+
+
+
+        /* =================================
+           SEARCH MEMBERS
+           ================================= */
+
+        memberSearch.addEventListener(
+            "input",
+            function () {
+
+                const query =
+                    this.value.trim();
+
+
+                clearTimeout(
+                    searchTimeout
+                );
+
+
+                /*
+                 * If the user starts typing again,
+                 * remove the previous selection.
+                 */
+
+                memberId.value = "";
+
+                selectedMember.style.display =
+                    "none";
+
+
+                /*
+                 * Don't search until at least
+                 * two characters are entered.
+                 */
+
+                if (query.length < 2) {
+
+                    resultsBox.innerHTML = "";
+
+                    resultsBox.style.display =
+                        "none";
+
+                    return;
+
+                }
+
+
+                /*
+                 * Wait 300ms before searching.
+                 */
+
+                searchTimeout = setTimeout(
+                    function () {
+
+
+                        fetch(
+                            `/finance/search-members?q=${encodeURIComponent(query)}`
+                        )
+
+                        .then(
+                            response => {
+
+                                if (!response.ok) {
+
+                                    throw new Error(
+                                        "Search request failed"
+                                    );
+
+                                }
+
+                                return response.json();
+
+                            }
+                        )
+
+                        .then(
+                            members => {
+
+
+                                resultsBox.innerHTML = "";
+
+
+                                /*
+                                 * No results
+                                 */
+
+                                if (
+                                    members.length === 0
+                                ) {
+
+                                    resultsBox.innerHTML = `
+                                        <div class="member-search-empty">
+                                            Hakuna muumini aliyepatikana.
+                                        </div>
+                                    `;
+
+                                    resultsBox.style.display =
+                                        "block";
+
+                                    return;
+
+                                }
+
+
+
+                                /*
+                                 * Create result
+                                 * for every member.
+                                 */
+
+                                members.forEach(
+                                    function (member) {
+
+
+                                        const result =
+                                            document.createElement(
+                                                "button"
+                                            );
+
+
+                                        result.type =
+                                            "button";
+
+
+                                        result.className =
+                                            "member-search-result";
+
+
+                                        result.innerHTML = `
+
+                                            <strong>
+                                                ${member.jina_kamili}
+                                            </strong>
+
+                                            <small>
+                                                ${member.namba_ya_usajili}
+                                            </small>
+
+                                        `;
+
+
+
+                                        /*
+                                         * MEMBER SELECTED
+                                         */
+
+                                        result.addEventListener(
+                                            "click",
+                                            function () {
+
+
+                                                /*
+                                                 * Store the
+                                                 * real database ID.
+                                                 */
+
+                                                memberId.value =
+                                                    member.id;
+
+
+                                                /*
+                                                 * Put member
+                                                 * name into search.
+                                                 */
+
+                                                memberSearch.value =
+                                                    member.jina_kamili;
+
+
+                                                /*
+                                                 * Show selected
+                                                 * member.
+                                                 */
+
+                                                selectedMemberName.textContent =
+                                                    `${member.jina_kamili} — ${member.namba_ya_usajili}`;
+
+
+                                                selectedMember.style.display =
+                                                    "flex";
+
+
+                                                /*
+                                                 * Remove results.
+                                                 */
+
+                                                resultsBox.innerHTML = "";
+
+                                                resultsBox.style.display =
+                                                    "none";
+
+                                            }
+                                        );
+
+
+                                        resultsBox.appendChild(
+                                            result
+                                        );
+
+                                    }
+                                );
+
+
+                                resultsBox.style.display =
+                                    "block";
+
+                            }
+                        )
+
+                        .catch(
+                            function (error) {
+
+                                console.error(
+                                    "Member search error:",
+                                    error
+                                );
+
+
+                                resultsBox.innerHTML = `
+                                    <div class="member-search-empty">
+                                        Hitilafu wakati wa kutafuta muumini.
+                                    </div>
+                                `;
+
+
+                                resultsBox.style.display =
+                                    "block";
+
+                            }
+                        );
+
+
+                    },
+                    300
+                );
+
+            }
+        );
+
+
+
+        /* =================================
+           CLEAR SELECTED MEMBER
+           ================================= */
+
+        clearMember.addEventListener(
+            "click",
+            function () {
+
+
+                memberId.value = "";
+
+                memberSearch.value = "";
+
+                selectedMemberName.textContent =
+                    "";
+
+                selectedMember.style.display =
+                    "none";
+
+                resultsBox.innerHTML = "";
+
+                resultsBox.style.display =
+                    "none";
+
+
+                memberSearch.focus();
+
+            }
+        );
+
+
+
+        /* =================================
+           CLOSE RESULTS WHEN CLICKING
+           OUTSIDE THE SEARCH
+           ================================= */
+
+        document.addEventListener(
+            "click",
+            function (event) {
+
+
+                if (
+
+                    !memberSearch.contains(
+                        event.target
+                    )
+
+                    &&
+
+                    !resultsBox.contains(
+                        event.target
+                    )
+
+                ) {
+
+                    resultsBox.style.display =
+                        "none";
+
+                }
+
+            }
+        );
+
+    </script>
+
+
+</body>
+
+</html>

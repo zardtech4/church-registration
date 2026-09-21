@@ -26,7 +26,13 @@
     <nav class="navbar">
 
         <div class="nav-brand">
-            USAJILI WA WAUMINI
+
+            {% if church_settings and church_settings["church_name"] %}
+                {{ church_settings["church_name"] }}
+            {% else %}
+                USAJILI WA WAUMINI
+            {% endif %}
+
         </div>
 
 
@@ -41,6 +47,9 @@
             </a>
 
         </div>
+        <a href="{{ url_for('home') }}">
+    Mwanzo
+</a>
 
     </nav>
 
@@ -54,6 +63,25 @@
 
             <div class="form-header">
 
+                {% if church_settings and church_settings["logo"] %}
+
+                    <img
+                        src="{{ url_for(
+                            'static',
+                            filename='uploads/' + church_settings['logo']
+                        ) }}"
+                        alt="Logo ya Kanisa"
+                        style="
+                            max-width: 110px;
+                            max-height: 110px;
+                            object-fit: contain;
+                            margin-bottom: 15px;
+                        "
+                    >
+
+                {% endif %}
+
+
                 <h1>
                     Sajili Muumini
                 </h1>
@@ -65,7 +93,6 @@
             </div>
 
 
-
             {% if error %}
 
                 <div class="form-error">
@@ -73,7 +100,6 @@
                 </div>
 
             {% endif %}
-
 
 
             <form
@@ -86,7 +112,9 @@
                 <div class="form-group">
 
                     <label for="jina">
+
                         Jina Kamili
+
                     </label>
 
                     <input
@@ -101,11 +129,12 @@
                 </div>
 
 
-
                 <div class="form-group">
 
                     <label for="makazi">
+
                         Makazi
+
                     </label>
 
                     <input
@@ -120,11 +149,12 @@
                 </div>
 
 
-
                 <div class="form-group">
 
                     <label for="simu">
+
                         Namba ya Simu
+
                     </label>
 
                     <input
@@ -139,11 +169,12 @@
                 </div>
 
 
-
                 <div class="form-group">
 
                     <label for="jinsia">
+
                         Jinsia
+
                     </label>
 
                     <select
@@ -159,21 +190,27 @@
 
                         <option
                             value="Mwanaume"
+
                             {% if form_data and form_data.jinsia == "Mwanaume" %}
                                 selected
                             {% endif %}
                         >
+
                             Mwanaume
+
                         </option>
 
 
                         <option
                             value="Mwanamke"
+
                             {% if form_data and form_data.jinsia == "Mwanamke" %}
                                 selected
                             {% endif %}
                         >
+
                             Mwanamke
+
                         </option>
 
                     </select>
@@ -181,11 +218,68 @@
                 </div>
 
 
+                <!-- SUBZONE -->
+
+                <div class="form-group">
+
+                    <label for="subzone_id">
+
+                        Subzone
+
+                    </label>
+
+                    <select
+                        id="subzone_id"
+                        name="subzone_id"
+                    >
+
+                        <option value="">
+                            -- Chagua Subzone --
+                        </option>
+
+
+                        {% for subzone in subzones %}
+
+                            <option
+                                value="{{ subzone['id'] }}"
+
+                                {% if form_data and form_data.subzone_id|string == subzone['id']|string %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ subzone["name"] }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+
+                    {% if not subzones %}
+
+                        <small>
+                            Hakuna subzone iliyowekwa bado.
+                        </small>
+
+                    {% else %}
+
+                        <small>
+                            Chagua subzone ya muumini kama inajulikana.
+                        </small>
+
+                    {% endif %}
+
+                </div>
+
 
                 <div class="form-group">
 
                     <label for="picha">
+
                         Picha
+
                     </label>
 
                     <input
@@ -202,12 +296,13 @@
                 </div>
 
 
-
                 <button
                     type="submit"
                     class="primary-button"
                 >
+
                     SAJILI MUUMINI
+
                 </button>
 
 

@@ -1,31 +1,66 @@
-from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, g
+import os
+import re
+import uuid
+
 from datetime import datetime
+from functools import wraps
+
+from flask import (
+    Flask,
+    abort,
+    flash,
+    g,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for
+)
+
+from dotenv import load_dotenv
+from werkzeug.security import (
+    check_password_hash,
+    generate_password_hash
+)
+from werkzeug.utils import secure_filename
+
 import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
-import os
-import uuid
-import re
-from functools import wraps
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from dotenv import load_dotenv
+
+
+# ============================================================
+# ENVIRONMENT
+# ============================================================
 
 load_dotenv()
 
+
+# ============================================================
+# FLASK APP
+# ============================================================
+
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
+
+app.config["SECRET_KEY"] = os.getenv(
+    "SECRET_KEY",
+    "change-this-secret-key"
+)
+
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
 
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+# ============================================================
+# DATABASE
+# ============================================================
 
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+DATABASE_URL = os.getenv("DATABASE_URL")
 
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL haijawekwa kwenye environment variables."
+    )
 
-DATABASE_URL = os.environ["DATABASE_URL"]
 
 pool = ConnectionPool(
     conninfo=DATABASE_URL,
@@ -33,272 +68,302 @@ pool = ConnectionPool(
     max_size=5,
     kwargs={
         "row_factory": dict_row
-    },
-    open=True
+    }
 )
 
 
+# ============================================================
+# UPLOADS
+# ============================================================
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+UPLOAD_FOLDER = os.path.join(
+    BASE_DIR,
+    "static",
+    "uploads"
+)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+os.makedirs(
+    UPLOAD_FOLDER,
+    exist_ok=True
+)
+
+
+ALLOWED_EXTENSIONS = {
+    "jpg",
+    "jpeg",
+    "png",
+    "webp"
+}
+
+
+# ============================================================
+# DATABASE CONNECTION HELPERS
+# ============================================================
+
 def get_db():
+    """
+    Gets one PostgreSQL connection from the pool
+    and stores it in Flask's application context.
+    """
+
     if "db" not in g:
-        g.db = pool.getconn()
+
+        db = pool.getconn()
+
+        try:
+            db.execute("SELECT 1")
+
+        except Exception:
+
+            try:
+                pool.putconn(
+                    db,
+                    destroy=True
+                )
+            except Exception:
+                pass
+
+            db = pool.getconn()
+
+        g.db = db
 
     return g.db
 
 
 @app.teardown_appcontext
-def close_db(error=None):
+def close_db(exception=None):
+
     db = g.pop("db", None)
 
     if db is not None:
-        pool.putconn(db)
 
+        try:
+
+            if exception is None:
+                db.commit()
+            else:
+                db.rollback()
+
+            pool.putconn(db)
+
+        except Exception:
+
+            try:
+                pool.putconn(
+                    db,
+                    destroy=True
+                )
+            except Exception:
+                pass
+
+
+# ============================================================
+# FILE HELPERS
+# ============================================================
 
 def allowed_file(filename):
+
     return (
         "." in filename
-        and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+        and filename.rsplit(
+            ".",
+            1
+        )[1].lower() in ALLOWED_EXTENSIONS
     )
 
 
-def init_database():
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+def save_uploaded_image(file):
 
-    with pool.connection() as db:
+    if not file:
+        return None
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS roles (
-                id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                name TEXT NOT NULL UNIQUE
-            )
-        """)
+    if not file.filename:
+        return None
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS permissions (
-                id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                name TEXT NOT NULL UNIQUE
-            )
-        """)
+    if not allowed_file(file.filename):
+        return None
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS role_permissions (
-                role_id INTEGER NOT NULL,
-                permission_id INTEGER NOT NULL,
-                PRIMARY KEY (role_id, permission_id),
-                FOREIGN KEY (role_id) REFERENCES roles(id),
-                FOREIGN KEY (permission_id) REFERENCES permissions(id)
-            )
-        """)
+    original_name = secure_filename(
+        file.filename
+    )
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS admins (
-                id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                username TEXT NOT NULL UNIQUE,
-                full_name TEXT NOT NULL,
-                password_hash TEXT NOT NULL,
-                active INTEGER NOT NULL DEFAULT 1,
-                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                last_login TIMESTAMP,
-                role_id INTEGER,
-                FOREIGN KEY (role_id) REFERENCES roles(id)
-            )
-        """)
+    extension = (
+        original_name
+        .rsplit(".", 1)[1]
+        .lower()
+    )
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS audit_logs (
-                id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                admin_id INTEGER,
-                action TEXT NOT NULL,
-                details TEXT,
-                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (admin_id) REFERENCES admins(id)
-            )
-        """)
+    filename = (
+        f"{uuid.uuid4().hex}.{extension}"
+    )
 
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS waumini (
-                id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                namba_ya_usajili TEXT NOT NULL UNIQUE,
-                jina_kamili TEXT NOT NULL,
-                makazi TEXT NOT NULL,
-                jinsia TEXT NOT NULL,
-                picha TEXT,
-                namba_ya_sim TEXT NOT NULL,
-                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
+    filepath = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
 
-        roles = [
-            "superadmin",
-            "admin",
-            "secretary",
-            "treasurer"
-        ]
+    file.save(filepath)
 
-        permissions = [
-            "dashboard.view",
-            "members.view",
-            "members.create",
-            "members.edit",
-            "members.delete",
-            "admins.view",
-            "admins.create",
-            "admins.manage",
-            "audit.view"
-        ]
+    return filename
 
-        for role in roles:
-            db.execute(
-                """
-                INSERT INTO roles (name)
-                VALUES (%s)
-                ON CONFLICT (name) DO NOTHING
-                """,
-                (role,)
-            )
 
-        for permission in permissions:
-            db.execute(
-                """
-                INSERT INTO permissions (name)
-                VALUES (%s)
-                ON CONFLICT (name) DO NOTHING
-                """,
-                (permission,)
-            )
+def delete_uploaded_file(filename):
 
-        role_permissions = {
-            "superadmin": permissions,
+    if not filename:
+        return
 
-            "admin": [
-                "dashboard.view",
-                "members.view",
-                "members.create",
-                "members.edit",
-                "members.delete",
-                "admins.view",
-                "audit.view"
-            ],
+    filepath = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
 
-            "secretary": [
-                "dashboard.view",
-                "members.view",
-                "members.create",
-                "members.edit"
-            ],
+    if os.path.isfile(filepath):
 
-            "treasurer": [
-                "dashboard.view",
-                "members.view"
-            ]
-        }
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
 
-        for role_name, permission_names in role_permissions.items():
 
-            role = db.execute(
-                """
-                SELECT id
-                FROM roles
-                WHERE name = %s
-                """,
-                (role_name,)
-            ).fetchone()
+# ============================================================
+# CHURCH SETTINGS
+# ============================================================
 
-            for permission_name in permission_names:
+def get_church_settings():
 
-                permission = db.execute(
-                    """
-                    SELECT id
-                    FROM permissions
-                    WHERE name = %s
-                    """,
-                    (permission_name,)
-                ).fetchone()
+    db = get_db()
 
-                db.execute(
-                    """
-                    INSERT INTO role_permissions
-                    (
-                        role_id,
-                        permission_id
-                    )
-                    VALUES (%s, %s)
-                    ON CONFLICT DO NOTHING
-                    """,
-                    (
-                        role["id"],
-                        permission["id"]
-                    )
-                )
+    settings = db.execute(
+        """
+        SELECT
+            id,
+            church_name,
+            address,
+            phone,
+            email,
+            logo
+        FROM church_settings
+        WHERE id = 1
+        """
+    ).fetchone()
 
-        superadmin_role = db.execute(
-            """
-            SELECT id
-            FROM roles
-            WHERE name = 'superadmin'
-            """
-        ).fetchone()
+    return settings
 
-        existing_admin = db.execute(
-            """
-            SELECT id
-            FROM admins
-            WHERE username = 'admin'
-            """
-        ).fetchone()
 
-        if not existing_admin:
+# ============================================================
+# SUBZONE HELPERS
+# ============================================================
 
-            initial_password = os.environ.get(
-                "INITIAL_ADMIN_PASSWORD",
-                "ChangeMeImmediately123!"
-            )
+def get_active_subzones():
 
-            db.execute(
-                """
-                INSERT INTO admins
-                (
-                    username,
-                    full_name,
-                    password_hash,
-                    active,
-                    role_id
-                )
-                VALUES (%s, %s, %s, %s, %s)
-                """,
-                (
-                    "admin",
-                    "System Administrator",
-                    generate_password_hash(initial_password),
-                    1,
-                    superadmin_role["id"]
-                )
-            )
+    db = get_db()
 
-        db.execute(
-            """
-            UPDATE admins
-            SET role_id = %s
-            WHERE role_id IS NULL
-            """,
-            (superadmin_role["id"],)
+    return db.execute(
+        """
+        SELECT
+            id,
+            name
+        FROM subzones
+        WHERE active = 1
+        ORDER BY name ASC
+        """
+    ).fetchall()
+
+
+def get_all_subzones_with_counts():
+
+    db = get_db()
+
+    return db.execute(
+        """
+        SELECT
+            s.id,
+            s.name,
+            s.description,
+            s.active,
+            s.created_at,
+            s.updated_at,
+            COUNT(w.id) AS member_count
+        FROM subzones s
+        LEFT JOIN waumini w
+            ON w.subzone_id = s.id
+        GROUP BY
+            s.id,
+            s.name,
+            s.description,
+            s.active,
+            s.created_at,
+            s.updated_at
+        ORDER BY
+            s.name ASC
+        """
+    ).fetchall()
+
+
+# ============================================================
+# REGISTRATION NUMBER
+# ============================================================
+
+def generate_registration_number():
+
+    db = get_db()
+
+    year = datetime.now().year
+
+    prefix = f"WM-{year}-"
+
+    row = db.execute(
+        """
+        SELECT
+            namba_ya_usajili
+        FROM waumini
+        WHERE namba_ya_usajili LIKE %s
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (f"{prefix}%",)
+    ).fetchone()
+
+    if not row:
+
+        return f"{prefix}0001"
+
+    last_number = row["namba_ya_usajili"]
+
+    try:
+
+        last_sequence = int(
+            last_number.split("-")[-1]
         )
 
-        db.commit()
+    except (
+        ValueError,
+        AttributeError
+    ):
+
+        last_sequence = 0
+
+    next_sequence = last_sequence + 1
+
+    return (
+        f"{prefix}"
+        f"{next_sequence:04d}"
+    )
 
 
-init_database()
-
+# ============================================================
+# AUTHENTICATION HELPERS
+# ============================================================
 
 def get_current_admin():
-
-    if hasattr(g, "current_admin"):
-        return g.current_admin
 
     admin_id = session.get("admin_id")
 
     if not admin_id:
-        g.current_admin = None
-        g.current_permissions = set()
         return None
 
     db = get_db()
@@ -306,113 +371,128 @@ def get_current_admin():
     admin = db.execute(
         """
         SELECT
-            admins.id,
-            admins.username,
-            admins.full_name,
-            admins.active,
-            admins.created_at,
-            admins.last_login,
-            admins.role_id,
-            roles.name AS role_name
-        FROM admins
-        LEFT JOIN roles
-            ON admins.role_id = roles.id
-        WHERE admins.id = %s
+            a.id,
+            a.username,
+            a.full_name,
+            a.email,
+            a.is_active,
+            a.created_at,
+            a.last_login,
+            r.name AS role_name
+        FROM admins a
+        LEFT JOIN roles r
+            ON r.id = a.role_id
+        WHERE a.id = %s
         """,
         (admin_id,)
     ).fetchone()
 
     if not admin:
-        g.current_admin = None
-        g.current_permissions = set()
+        session.clear()
+        return None
+
+    if not admin["is_active"]:
+        session.clear()
         return None
 
     permissions = db.execute(
         """
-        SELECT p.name
-        FROM role_permissions rp
-        JOIN permissions p
+        SELECT
+            p.name
+        FROM permissions p
+        INNER JOIN role_permissions rp
             ON rp.permission_id = p.id
-        WHERE rp.role_id = %s
+        INNER JOIN admins a
+            ON a.role_id = rp.role_id
+        WHERE a.id = %s
         """,
-        (admin["role_id"],)
+        (admin_id,)
     ).fetchall()
 
-    g.current_admin = admin
-    g.current_permissions = {
+    permission_names = {
         row["name"]
         for row in permissions
     }
 
+    admin = dict(admin)
+
+    admin["permissions"] = permission_names
+
     return admin
 
 
-def has_permission(permission_name):
+def login_required(view):
 
-    get_current_admin()
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
 
-    return permission_name in getattr(
-        g,
-        "current_permissions",
-        set()
-    )
+        admin = get_current_admin()
 
+        if not admin:
 
-def login_required():
-    def decorator(view):
+            flash(
+                "Tafadhali ingia kwanza.",
+                "error"
+            )
 
-        @wraps(view)
-        def wrapped(*args, **kwargs):
+            return redirect(
+                url_for("login")
+            )
 
-            admin = get_current_admin()
+        return view(*args, **kwargs)
 
-            if not admin:
-                return redirect(url_for("login"))
-
-            if not admin["active"]:
-                session.clear()
-                g.current_admin = None
-                g.current_permissions = set()
-
-                return redirect(url_for("login"))
-
-            return view(*args, **kwargs)
-
-        return wrapped
-
-    return decorator
+    return wrapped_view
 
 
-def permission_required(permission_name):
+def permission_required(permission):
 
     def decorator(view):
 
         @wraps(view)
-        def wrapped(*args, **kwargs):
+        def wrapped_view(*args, **kwargs):
 
             admin = get_current_admin()
 
             if not admin:
-                return redirect(url_for("login"))
 
-            if not admin["active"]:
-                session.clear()
+                flash(
+                    "Tafadhali ingia kwanza.",
+                    "error"
+                )
 
-                return redirect(url_for("login"))
+                return redirect(
+                    url_for("login")
+                )
 
-            if not has_permission(permission_name):
+            permissions = admin.get(
+                "permissions",
+                set()
+            )
+
+            if (
+                permission not in permissions
+                and admin.get("role_name") != "superadmin"
+            ):
+
                 return render_template(
                     "403.html"
                 ), 403
 
             return view(*args, **kwargs)
 
-        return wrapped
+        return wrapped_view
 
     return decorator
 
 
-def log_action(action, details=None):
+# ============================================================
+# AUDIT LOG
+# ============================================================
+
+def log_action(
+    action,
+    description=""
+):
 
     admin = get_current_admin()
 
@@ -421,105 +501,854 @@ def log_action(action, details=None):
 
     db = get_db()
 
+    ip_address = (
+        request.headers.get(
+            "X-Forwarded-For",
+            request.remote_addr
+        )
+    )
+
+    if ip_address and "," in ip_address:
+
+        ip_address = (
+            ip_address
+            .split(",")[0]
+            .strip()
+        )
+
     db.execute(
         """
-        INSERT INTO audit_logs
-        (
+        INSERT INTO audit_logs (
             admin_id,
             action,
-            details
+            description,
+            ip_address
         )
-        VALUES (%s, %s, %s)
+        VALUES (
+            %s,
+            %s,
+            %s,
+            %s
+        )
         """,
         (
             admin["id"],
             action,
-            details
+            description,
+            ip_address
         )
     )
+
+
+# ============================================================
+# DATABASE INITIALIZATION / MIGRATIONS
+# ============================================================
+
+def init_database():
+
+    db = get_db()
+
+    # --------------------------------------------------------
+    # ROLES
+    # --------------------------------------------------------
+
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS roles (
+            id INTEGER
+            GENERATED ALWAYS AS IDENTITY
+            PRIMARY KEY,
+
+            name TEXT NOT NULL UNIQUE
+        )
+        """
+    )
+
+    # --------------------------------------------------------
+    # PERMISSIONS
+    # --------------------------------------------------------
+
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS permissions (
+            id INTEGER
+            GENERATED ALWAYS AS IDENTITY
+            PRIMARY KEY,
+
+            name TEXT NOT NULL UNIQUE
+        )
+        """
+    )
+
+    # --------------------------------------------------------
+    # ROLE PERMISSIONS
+    # --------------------------------------------------------
+
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS role_permissions (
+            role_id INTEGER NOT NULL,
+            permission_id INTEGER NOT NULL,
+
+            PRIMARY KEY (
+                role_id,
+                permission_id
+            ),
+
+            FOREIGN KEY (role_id)
+                REFERENCES roles(id)
+                ON DELETE CASCADE,
+
+            FOREIGN KEY (permission_id)
+                REFERENCES permissions(id)
+                ON DELETE CASCADE
+        )
+        """
+    )
+
+    # --------------------------------------------------------
+    # ADMINS
+    # --------------------------------------------------------
+
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER
+            GENERATED ALWAYS AS IDENTITY
+            PRIMARY KEY,
+
+            username TEXT NOT NULL UNIQUE,
+
+            password_hash TEXT NOT NULL,
+
+            full_name TEXT NOT NULL,
+
+            email TEXT,
+
+            role_id INTEGER,
+
+            is_active BOOLEAN
+            NOT NULL DEFAULT TRUE,
+
+            created_at TIMESTAMP
+            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            last_login TIMESTAMP,
+
+            FOREIGN KEY (role_id)
+                REFERENCES roles(id)
+                ON DELETE SET NULL
+        )
+        """
+    )
+
+    # Existing installations may not have is_active.
+    db.execute(
+        """
+        ALTER TABLE admins
+        ADD COLUMN IF NOT EXISTS
+        is_active BOOLEAN
+        NOT NULL DEFAULT TRUE
+        """
+    )
+
+    # --------------------------------------------------------
+    # AUDIT LOGS
+    # --------------------------------------------------------
+
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id INTEGER
+            GENERATED ALWAYS AS IDENTITY
+            PRIMARY KEY,
+
+            admin_id INTEGER,
+
+            action TEXT NOT NULL,
+
+            description TEXT,
+
+            ip_address TEXT,
+
+            created_at TIMESTAMP
+            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            FOREIGN KEY (admin_id)
+                REFERENCES admins(id)
+                ON DELETE SET NULL
+        )
+        """
+    )
+
+    # Existing installations may not have ip_address.
+    db.execute(
+        """
+        ALTER TABLE audit_logs
+        ADD COLUMN IF NOT EXISTS
+        ip_address TEXT
+        """
+    )
+
+    # --------------------------------------------------------
+    # SUBZONES
+    # --------------------------------------------------------
+
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS subzones (
+            id INTEGER
+            GENERATED ALWAYS AS IDENTITY
+            PRIMARY KEY,
+
+            name TEXT NOT NULL UNIQUE,
+
+            description TEXT,
+
+            active INTEGER
+            NOT NULL DEFAULT 1,
+
+            created_at TIMESTAMP
+            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            updated_at TIMESTAMP
+            NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+    # --------------------------------------------------------
+    # CHURCH SETTINGS
+    # --------------------------------------------------------
+
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS church_settings (
+            id INTEGER PRIMARY KEY,
+
+            church_name TEXT,
+
+            address TEXT,
+
+            phone TEXT,
+
+            email TEXT,
+
+            logo TEXT
+        )
+        """
+    )
+
+    db.execute(
+        """
+        INSERT INTO church_settings (
+            id,
+            church_name
+        )
+        VALUES (
+            1,
+            'KANISA'
+        )
+        ON CONFLICT (id)
+        DO NOTHING
+        """
+    )
+
+    # --------------------------------------------------------
+    # ANNOUNCEMENTS
+    # --------------------------------------------------------
+
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS announcements (
+            id INTEGER
+            GENERATED ALWAYS AS IDENTITY
+            PRIMARY KEY,
+
+            title TEXT NOT NULL,
+
+            content TEXT NOT NULL,
+
+            published BOOLEAN
+            NOT NULL DEFAULT FALSE,
+
+            created_at TIMESTAMP
+            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            updated_at TIMESTAMP
+            NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+    # --------------------------------------------------------
+    # MEMBERS
+    # --------------------------------------------------------
+    #
+    # IMPORTANT:
+    # We do NOT recreate or replace the existing members
+    # table. This preserves the existing member data.
+    #
+    # --------------------------------------------------------
+
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS waumini (
+            id INTEGER
+            GENERATED ALWAYS AS IDENTITY
+            PRIMARY KEY,
+
+            namba_ya_usajili TEXT NOT NULL UNIQUE,
+
+            jina_kamili TEXT NOT NULL,
+
+            makazi TEXT NOT NULL,
+
+            jinsia TEXT NOT NULL,
+
+            picha TEXT,
+
+            created_at TIMESTAMP
+            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            namba_ya_sim TEXT
+        )
+        """
+    )
+
+    # Existing members table migration.
+    db.execute(
+        """
+        ALTER TABLE waumini
+        ADD COLUMN IF NOT EXISTS
+        subzone_id INTEGER
+        """
+    )
+
+    # Add FK only if it is not already present.
+    db.execute(
+        """
+        DO $$
+        BEGIN
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname =
+                    'waumini_subzone_id_fkey'
+            ) THEN
+
+                ALTER TABLE waumini
+
+                ADD CONSTRAINT
+                    waumini_subzone_id_fkey
+
+                FOREIGN KEY (
+                    subzone_id
+                )
+
+                REFERENCES subzones(id)
+
+                ON DELETE SET NULL;
+
+            END IF;
+
+        END
+        $$;
+        """
+    )
+
+    # --------------------------------------------------------
+    # PERMISSIONS SEED
+    # --------------------------------------------------------
+
+    permission_names = [
+
+        "dashboard.view",
+
+        "members.view",
+        "members.create",
+        "members.edit",
+        "members.delete",
+
+        "admins.view",
+        "admins.create",
+        "admins.manage",
+
+        "audit.view",
+
+        "settings.view",
+        "settings.manage",
+
+        "subzones.view",
+        "subzones.create",
+        "subzones.edit",
+        "subzones.delete",
+
+        "announcements.view",
+        "announcements.create",
+        "announcements.edit",
+        "announcements.delete"
+    ]
+
+    for permission_name in permission_names:
+
+        db.execute(
+            """
+            INSERT INTO permissions (
+                name
+            )
+            VALUES (%s)
+            ON CONFLICT (name)
+            DO NOTHING
+            """,
+            (permission_name,)
+        )
+
+    # --------------------------------------------------------
+    # ROLES SEED
+    # --------------------------------------------------------
+
+    role_names = [
+        "superadmin",
+        "admin",
+        "secretary",
+        "treasurer"
+    ]
+
+    for role_name in role_names:
+
+        db.execute(
+            """
+            INSERT INTO roles (
+                name
+            )
+            VALUES (%s)
+            ON CONFLICT (name)
+            DO NOTHING
+            """,
+            (role_name,)
+        )
+
+    # --------------------------------------------------------
+    # SUPERADMIN
+    # --------------------------------------------------------
+
+    db.execute(
+        """
+        INSERT INTO role_permissions (
+            role_id,
+            permission_id
+        )
+
+        SELECT
+            r.id,
+            p.id
+
+        FROM roles r
+
+        CROSS JOIN permissions p
+
+        WHERE r.name = 'superadmin'
+
+        ON CONFLICT (
+            role_id,
+            permission_id
+        )
+        DO NOTHING
+        """
+    )
+
+    # --------------------------------------------------------
+    # ADMIN PERMISSIONS
+    # --------------------------------------------------------
+
+    admin_permissions = [
+
+        "dashboard.view",
+
+        "members.view",
+        "members.create",
+        "members.edit",
+        "members.delete",
+
+        "admins.view",
+        "admins.create",
+        "admins.manage",
+
+        "audit.view",
+
+        "settings.view",
+        "settings.manage",
+
+        "subzones.view",
+        "subzones.create",
+        "subzones.edit",
+        "subzones.delete",
+
+        "announcements.view",
+        "announcements.create",
+        "announcements.edit",
+        "announcements.delete"
+    ]
+
+    for permission_name in admin_permissions:
+
+        db.execute(
+            """
+            INSERT INTO role_permissions (
+                role_id,
+                permission_id
+            )
+
+            SELECT
+                r.id,
+                p.id
+
+            FROM roles r
+            CROSS JOIN permissions p
+
+            WHERE r.name = 'admin'
+            AND p.name = %s
+
+            ON CONFLICT (
+                role_id,
+                permission_id
+            )
+            DO NOTHING
+            """,
+            (permission_name,)
+        )
+
+    # --------------------------------------------------------
+    # SECRETARY PERMISSIONS
+    # --------------------------------------------------------
+
+    secretary_permissions = [
+
+        "dashboard.view",
+
+        "members.view",
+        "members.create",
+        "members.edit",
+
+        "subzones.view",
+
+        "announcements.view",
+        "announcements.create",
+        "announcements.edit"
+    ]
+
+    for permission_name in secretary_permissions:
+
+        db.execute(
+            """
+            INSERT INTO role_permissions (
+                role_id,
+                permission_id
+            )
+
+            SELECT
+                r.id,
+                p.id
+
+            FROM roles r
+            CROSS JOIN permissions p
+
+            WHERE r.name = 'secretary'
+            AND p.name = %s
+
+            ON CONFLICT (
+                role_id,
+                permission_id
+            )
+            DO NOTHING
+            """,
+            (permission_name,)
+        )
+
+    # --------------------------------------------------------
+    # TREASURER PERMISSIONS
+    # --------------------------------------------------------
+
+    treasurer_permissions = [
+
+        "dashboard.view",
+
+        "members.view",
+
+        "subzones.view"
+    ]
+
+    for permission_name in treasurer_permissions:
+
+        db.execute(
+            """
+            INSERT INTO role_permissions (
+                role_id,
+                permission_id
+            )
+
+            SELECT
+                r.id,
+                p.id
+
+            FROM roles r
+            CROSS JOIN permissions p
+
+            WHERE r.name = 'treasurer'
+            AND p.name = %s
+
+            ON CONFLICT (
+                role_id,
+                permission_id
+            )
+            DO NOTHING
+            """,
+            (permission_name,)
+        )
+
+    # --------------------------------------------------------
+    # INITIAL ADMIN
+    # --------------------------------------------------------
+
+    initial_password = os.getenv(
+        "INITIAL_ADMIN_PASSWORD",
+        "ChangeMeImmediately123!"
+    )
+
+    admin_role = db.execute(
+        """
+        SELECT
+            id
+        FROM roles
+        WHERE name = 'superadmin'
+        """
+    ).fetchone()
+
+    if admin_role:
+
+        existing_admin = db.execute(
+            """
+            SELECT
+                id
+            FROM admins
+            WHERE username = 'admin'
+            """
+        ).fetchone()
+
+        if not existing_admin:
+
+            db.execute(
+                """
+                INSERT INTO admins (
+                    username,
+                    password_hash,
+                    full_name,
+                    email,
+                    role_id,
+                    is_active
+                )
+                VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    TRUE
+                )
+                """,
+                (
+                    "admin",
+                    generate_password_hash(
+                        initial_password
+                    ),
+                    "System Administrator",
+                    "admin@example.com",
+                    admin_role["id"]
+                )
+            )
 
     db.commit()
 
 
-def generate_registration_number():
-
-    year = datetime.now().year
-
-    db = get_db()
-
-    row = db.execute(
-        """
-        SELECT namba_ya_usajili
-        FROM waumini
-        WHERE namba_ya_usajili LIKE %s
-        ORDER BY id DESC
-        LIMIT 1
-        """,
-        (f"WM-{year}-%",)
-    ).fetchone()
-
-    if not row:
-        return f"WM-{year}-0001"
-
-    match = re.search(
-        rf"WM-{year}-(\d+)",
-        row["namba_ya_usajili"]
-    )
-
-    if not match:
-        return f"WM-{year}-0001"
-
-    number = int(match.group(1)) + 1
-
-    return f"WM-{year}-{number:04d}"
-
+# ============================================================
+# GLOBAL TEMPLATE VARIABLES
+# ============================================================
 
 @app.context_processor
 def inject_global_variables():
 
     admin = get_current_admin()
 
-    permissions = getattr(
-        g,
-        "current_permissions",
-        set()
-    )
+    if admin:
+
+        permissions = admin.get(
+            "permissions",
+            set()
+        )
+
+        is_superadmin = (
+            admin.get("role_name")
+            == "superadmin"
+        )
+
+    else:
+
+        permissions = set()
+
+        is_superadmin = False
 
     return {
+
         "current_admin": admin,
 
-        "is_logged_in": admin is not None,
+        "church_settings":
+            get_church_settings(),
 
-        "is_superadmin": (
-            admin is not None
-            and admin["role_name"] == "superadmin"
-        ),
+        "is_superadmin":
+            is_superadmin,
 
-        "can_view_admins":
-            "admins.view" in permissions,
-
-        "can_create_admins":
-            "admins.create" in permissions,
-
-        "can_manage_admins":
-            "admins.manage" in permissions,
-
-        "can_view_audit":
-            "audit.view" in permissions,
-
+        # Members
         "can_view_members":
-            "members.view" in permissions,
+            is_superadmin
+            or "members.view"
+            in permissions,
+
+        "can_create_members":
+            is_superadmin
+            or "members.create"
+            in permissions,
 
         "can_edit_members":
-            "members.edit" in permissions,
+            is_superadmin
+            or "members.edit"
+            in permissions,
 
         "can_delete_members":
-            "members.delete" in permissions
+            is_superadmin
+            or "members.delete"
+            in permissions,
+
+        # Admins
+        "can_view_admins":
+            is_superadmin
+            or "admins.view"
+            in permissions,
+
+        "can_create_admins":
+            is_superadmin
+            or "admins.create"
+            in permissions,
+
+        "can_manage_admins":
+            is_superadmin
+            or "admins.manage"
+            in permissions,
+
+        # Audit
+        "can_view_audit":
+            is_superadmin
+            or "audit.view"
+            in permissions,
+
+        # Settings
+        "can_view_settings":
+            is_superadmin
+            or "settings.view"
+            in permissions,
+
+        "can_manage_settings":
+            is_superadmin
+            or "settings.manage"
+            in permissions,
+
+        # Subzones
+        "can_view_subzones":
+            is_superadmin
+            or "subzones.view"
+            in permissions,
+
+        "can_create_subzones":
+            is_superadmin
+            or "subzones.create"
+            in permissions,
+
+        "can_edit_subzones":
+            is_superadmin
+            or "subzones.edit"
+            in permissions,
+
+        "can_delete_subzones":
+            is_superadmin
+            or "subzones.delete"
+            in permissions,
+
+        # Announcements
+        "can_view_announcements":
+            is_superadmin
+            or "announcements.view"
+            in permissions,
+
+        "can_create_announcements":
+            is_superadmin
+            or "announcements.create"
+            in permissions,
+
+        "can_edit_announcements":
+            is_superadmin
+            or "announcements.edit"
+            in permissions,
+
+        "can_delete_announcements":
+            is_superadmin
+            or "announcements.delete"
+            in permissions
     }
 
 
-@app.route("/", methods=["GET", "POST"])
+# ============================================================
+# PUBLIC HOMEPAGE
+# ============================================================
+
+@app.route("/")
+def home():
+
+    db = get_db()
+
+    announcements = db.execute(
+        """
+        SELECT
+            id,
+            title,
+            content,
+            image,
+            created_at
+        FROM announcements
+        WHERE published = TRUE
+        ORDER BY created_at DESC
+        """
+    ).fetchall()
+
+    return render_template(
+        "home.html",
+        announcements=announcements
+    )
+
+
+# ============================================================
+# PUBLIC REGISTRATION
+# ============================================================
+
+@app.route(
+    "/register",
+    methods=["GET", "POST"]
+)
 def register():
+
+    db = get_db()
+
+    subzones = get_active_subzones()
 
     if request.method == "POST":
 
@@ -543,104 +1372,223 @@ def register():
             ""
         ).strip()
 
-        if not jina_kamili or not makazi or not jinsia or not namba_ya_sim:
+        subzone_id = request.form.get(
+            "subzone_id",
+            ""
+        ).strip()
+
+        if not jina_kamili:
+
+            flash(
+                "Jina kamili linahitajika.",
+                "error"
+            )
 
             return render_template(
                 "register.html",
-                error="Tafadhali jaza sehemu zote muhimu."
+                subzones=subzones
             )
 
-        picha_filename = None
+        if not makazi:
 
-        file = request.files.get("picha")
+            flash(
+                "Makazi yanahitajika.",
+                "error"
+            )
 
-        if file and file.filename:
+            return render_template(
+                "register.html",
+                subzones=subzones
+            )
 
-            if not allowed_file(file.filename):
+        if not jinsia:
+
+            flash(
+                "Jinsia inahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "register.html",
+                subzones=subzones
+            )
+
+        if not namba_ya_sim:
+
+            flash(
+                "Namba ya simu inahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "register.html",
+                subzones=subzones
+            )
+
+        phone_pattern = (
+            r"^(0\d{9}|\+255\d{9})$"
+        )
+
+        if not re.match(
+            phone_pattern,
+            namba_ya_sim
+        ):
+
+            flash(
+                "Namba ya simu si sahihi.",
+                "error"
+            )
+
+            return render_template(
+                "register.html",
+                subzones=subzones
+            )
+
+        selected_subzone = None
+
+        if subzone_id:
+
+            try:
+
+                subzone_id_int = int(
+                    subzone_id
+                )
+
+            except ValueError:
+
+                flash(
+                    "Subzone si sahihi.",
+                    "error"
+                )
 
                 return render_template(
                     "register.html",
-                    error="Aina ya picha hairuhusiwi."
+                    subzones=subzones
                 )
 
-            original_name = secure_filename(
-                file.filename
-            )
-
-            extension = original_name.rsplit(
-                ".",
-                1
-            )[1].lower()
-
-            picha_filename = (
-                f"{uuid.uuid4().hex}.{extension}"
-            )
-
-            os.makedirs(
-                UPLOAD_FOLDER,
-                exist_ok=True
-            )
-
-            file.save(
-                os.path.join(
-                    UPLOAD_FOLDER,
-                    picha_filename
-                )
-            )
-
-        registration_number = generate_registration_number()
-
-        db = get_db()
-
-        try:
-
-            db.execute(
+            selected_subzone = db.execute(
                 """
-                INSERT INTO waumini
-                (
-                    namba_ya_usajili,
-                    jina_kamili,
-                    makazi,
-                    jinsia,
-                    picha,
-                    namba_ya_sim
-                )
-                VALUES (%s, %s, %s, %s, %s, %s)
+                SELECT
+                    id,
+                    name
+                FROM subzones
+                WHERE id = %s
+                AND active = 1
                 """,
-                (
-                    registration_number,
-                    jina_kamili,
-                    makazi,
-                    jinsia,
-                    picha_filename,
-                    namba_ya_sim
+                (subzone_id_int,)
+            ).fetchone()
+
+            if not selected_subzone:
+
+                flash(
+                    "Subzone iliyochaguliwa haipo.",
+                    "error"
+                )
+
+                return render_template(
+                    "register.html",
+                    subzones=subzones
+                )
+
+        registration_number = (
+            generate_registration_number()
+        )
+
+        uploaded_filename = None
+
+        image = request.files.get(
+            "picha"
+        )
+
+        if image and image.filename:
+
+            if not allowed_file(
+                image.filename
+            ):
+
+                flash(
+                    "Aina ya picha hairuhusiwi.",
+                    "error"
+                )
+
+                return render_template(
+                    "register.html",
+                    subzones=subzones
+                )
+
+            uploaded_filename = (
+                save_uploaded_image(
+                    image
                 )
             )
 
-            db.commit()
-
-        except psycopg.IntegrityError:
-
-            db.rollback()
-
-            return render_template(
-                "register.html",
-                error="Imeshindikana kusajili mwanachama."
+        db.execute(
+            """
+            INSERT INTO waumini (
+                namba_ya_usajili,
+                jina_kamili,
+                makazi,
+                jinsia,
+                picha,
+                namba_ya_sim,
+                subzone_id
             )
+            VALUES (
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s
+            )
+            """,
+            (
+                registration_number,
+                jina_kamili,
+                makazi,
+                jinsia,
+                uploaded_filename,
+                namba_ya_sim,
+                (
+                    selected_subzone["id"]
+                    if selected_subzone
+                    else None
+                )
+            )
+        )
+
+        flash(
+            "Usajili umefanikiwa.",
+            "success"
+        )
 
         return render_template(
             "success.html",
-            registration_number=registration_number,
+            registration_number=(
+                registration_number
+            ),
             jina_kamili=jina_kamili
         )
 
-    return render_template("register.html")
+    return render_template(
+        "register.html",
+        subzones=subzones
+    )
 
 
-@app.route("/login", methods=["GET", "POST"])
+# ============================================================
+# LOGIN
+# ============================================================
+
+@app.route(
+    "/login",
+    methods=["GET", "POST"]
+)
 def login():
 
     if get_current_admin():
+
         return redirect(
             url_for("dashboard")
         )
@@ -662,19 +1610,23 @@ def login():
         admin = db.execute(
             """
             SELECT
-                admins.*,
-                roles.name AS role_name
-            FROM admins
-            LEFT JOIN roles
-                ON admins.role_id = roles.id
-            WHERE admins.username = %s
+                a.id,
+                a.username,
+                a.password_hash,
+                a.full_name,
+                a.is_active,
+                r.name AS role_name
+            FROM admins a
+            LEFT JOIN roles r
+                ON r.id = a.role_id
+            WHERE a.username = %s
             """,
             (username,)
         ).fetchone()
 
         if (
             admin
-            and admin["active"]
+            and admin["is_active"]
             and check_password_hash(
                 admin["password_hash"],
                 password
@@ -683,58 +1635,68 @@ def login():
 
             session.clear()
 
-            session["admin_id"] = admin["id"]
+            session["admin_id"] = (
+                admin["id"]
+            )
 
             db.execute(
                 """
                 UPDATE admins
-                SET last_login = %s
+                SET last_login =
+                    CURRENT_TIMESTAMP
                 WHERE id = %s
                 """,
+                (admin["id"],)
+            )
+
+            db.execute(
+                """
+                INSERT INTO audit_logs (
+                    admin_id,
+                    action,
+                    description,
+                    ip_address
+                )
+                VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s
+                )
+                """,
                 (
-                    datetime.now(),
-                    admin["id"]
+                    admin["id"],
+                    "LOGIN",
+                    "Admin logged in",
+                    request.remote_addr
                 )
             )
 
-            db.commit()
-
-            g.current_admin = admin
-
-            permissions = db.execute(
-                """
-                SELECT p.name
-                FROM role_permissions rp
-                JOIN permissions p
-                    ON rp.permission_id = p.id
-                WHERE rp.role_id = %s
-                """,
-                (admin["role_id"],)
-            ).fetchall()
-
-            g.current_permissions = {
-                row["name"]
-                for row in permissions
-            }
-
-            log_action(
-                "login",
-                f"Admin {username} aliingia kwenye mfumo."
+            flash(
+                "Umefanikiwa kuingia.",
+                "success"
             )
 
             return redirect(
                 url_for("dashboard")
             )
 
-        return render_template(
-            "login.html",
-            error="Username au password si sahihi."
+        flash(
+            "Username au password si sahihi.",
+            "error"
         )
 
-    return render_template("login.html")
+    return render_template(
+        "login.html"
+    )
 
+
+# ============================================================
+# LOGOUT
+# ============================================================
 
 @app.route("/logout")
+@login_required
 def logout():
 
     admin = get_current_admin()
@@ -742,51 +1704,82 @@ def logout():
     if admin:
 
         log_action(
-            "logout",
-            f"Admin {admin['username']} alitoka kwenye mfumo."
+            "LOGOUT",
+            "Admin logged out"
         )
 
     session.clear()
 
-    g.current_admin = None
-    g.current_permissions = set()
+    flash(
+        "Umetoka kwenye mfumo.",
+        "success"
+    )
 
     return redirect(
-        url_for("login")
+        url_for("home")
     )
 
 
+# ============================================================
+# DASHBOARD
+# ============================================================
+
 @app.route("/dashboard")
+@login_required
 @permission_required("dashboard.view")
 def dashboard():
 
     db = get_db()
 
-    stats = db.execute(
+    jumla = db.execute(
         """
         SELECT
-            COUNT(*) AS jumla,
-
-            COUNT(*) FILTER (
-                WHERE LOWER(jinsia)
-                IN ('mume', 'mwanaume', 'male')
-            ) AS wanaume,
-
-            COUNT(*) FILTER (
-                WHERE LOWER(jinsia)
-                IN ('mke', 'mwanamke', 'female')
-            ) AS wanawake,
-
-            COUNT(*) FILTER (
-                WHERE EXTRACT(
-                    YEAR FROM created_at
-                ) = %s
-            ) AS waliosajiliwa_mwaka_huu
-
+            COUNT(*) AS count
         FROM waumini
+        """
+    ).fetchone()["count"]
+
+    wanaume = db.execute(
+        """
+        SELECT
+            COUNT(*) AS count
+        FROM waumini
+        WHERE LOWER(TRIM(jinsia))
+        IN (
+            'mwanaume',
+            'mume',
+            'male'
+        )
+        """
+    ).fetchone()["count"]
+
+    wanawake = db.execute(
+        """
+        SELECT
+            COUNT(*) AS count
+        FROM waumini
+        WHERE LOWER(TRIM(jinsia))
+        IN (
+            'mwanamke',
+            'mke',
+            'female'
+        )
+        """
+    ).fetchone()["count"]
+
+    mwaka = datetime.now().year
+
+    waliosajiliwa_mwaka_huu = db.execute(
+        """
+        SELECT
+            COUNT(*) AS count
+        FROM waumini
+        WHERE namba_ya_usajili LIKE %s
         """,
-        (datetime.now().year,)
-    ).fetchone()
+        (
+            f"WM-{mwaka}-%",
+        )
+    ).fetchone()["count"]
 
     makazi = db.execute(
         """
@@ -794,129 +1787,193 @@ def dashboard():
             makazi,
             COUNT(*) AS idadi
         FROM waumini
+        WHERE makazi IS NOT NULL
+        AND TRIM(makazi) <> ''
         GROUP BY makazi
-        ORDER BY idadi DESC, makazi ASC
+        ORDER BY idadi DESC
         """
     ).fetchall()
 
-    total_admins = db.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM admins
-        """
-    ).fetchone()["total"]
-
-    active_admins = db.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM admins
-        WHERE active = 1
-        """
-    ).fetchone()["total"]
-
-    mwaka = datetime.now().year
-
     return render_template(
         "dashboard.html",
-
-        jumla=stats["jumla"],
-
-        wanaume=stats["wanaume"],
-
-        wanawake=stats["wanawake"],
-
+        jumla=jumla,
+        wanaume=wanaume,
+        wanawake=wanawake,
         mwaka=mwaka,
-
-        waliosajiliwa_mwaka_huu=
-            stats["waliosajiliwa_mwaka_huu"],
-
-        makazi=makazi,
-
-        total_members=stats["jumla"],
-
-        total_admins=total_admins,
-
-        active_admins=active_admins
+        waliosajiliwa_mwaka_huu=(
+            waliosajiliwa_mwaka_huu
+        ),
+        makazi=makazi
     )
 
 
+# ============================================================
+# MEMBERS
+# ============================================================
+
 @app.route("/members")
+@login_required
 @permission_required("members.view")
 def members():
+
+    db = get_db()
 
     search = request.args.get(
         "search",
         ""
     ).strip()
 
-    db = get_db()
+    jinsia_filter = request.args.get(
+        "jinsia",
+        ""
+    ).strip()
+
+    subzone_filter = request.args.get(
+        "subzone",
+        ""
+    ).strip()
+
+    query = """
+        SELECT
+            w.id,
+            w.namba_ya_usajili,
+            w.jina_kamili,
+            w.makazi,
+            w.jinsia,
+            w.picha,
+            w.namba_ya_sim,
+            w.created_at,
+            w.subzone_id,
+            s.name AS subzone_name
+        FROM waumini w
+        LEFT JOIN subzones s
+            ON s.id = w.subzone_id
+        WHERE 1 = 1
+    """
+
+    params = []
 
     if search:
 
-        waumini = db.execute(
-            """
-            SELECT *
-            FROM waumini
-            WHERE
-                jina_kamili ILIKE %s
-                OR namba_ya_usajili ILIKE %s
-                OR namba_ya_sim ILIKE %s
-                OR makazi ILIKE %s
-            ORDER BY id DESC
-            """,
-            (
-                f"%{search}%",
-                f"%{search}%",
-                f"%{search}%",
-                f"%{search}%"
+        query += """
+            AND (
+                LOWER(w.jina_kamili)
+                LIKE LOWER(%s)
+
+                OR LOWER(w.namba_ya_usajili)
+                LIKE LOWER(%s)
+
+                OR LOWER(w.makazi)
+                LIKE LOWER(%s)
+
+                OR LOWER(
+                    COALESCE(
+                        w.namba_ya_sim,
+                        ''
+                    )
+                )
+                LIKE LOWER(%s)
             )
-        ).fetchall()
-
-    else:
-
-        waumini = db.execute(
-            """
-            SELECT *
-            FROM waumini
-            ORDER BY id DESC
-            """
-        ).fetchall()
-
-    jumla = db.execute(
         """
-        SELECT COUNT(*) AS total
-        FROM waumini
+
+        search_value = f"%{search}%"
+
+        params.extend(
+            [
+                search_value,
+                search_value,
+                search_value,
+                search_value
+            ]
+        )
+
+    if jinsia_filter:
+
+        query += """
+            AND LOWER(TRIM(w.jinsia))
+            = LOWER(%s)
         """
-    ).fetchone()["total"]
+
+        params.append(
+            jinsia_filter
+        )
+
+    if subzone_filter:
+
+        try:
+
+            subzone_filter_id = int(
+                subzone_filter
+            )
+
+            query += """
+                AND w.subzone_id = %s
+            """
+
+            params.append(
+                subzone_filter_id
+            )
+
+        except ValueError:
+            pass
+
+    query += """
+        ORDER BY w.id DESC
+    """
+
+    member_list = db.execute(
+        query,
+        params
+    ).fetchall()
+
+    subzones = get_active_subzones()
 
     return render_template(
         "members.html",
-        jumla=jumla,
-        waumini=waumini,
-        members=waumini,
-        search=search
+        members=member_list,
+        subzones=subzones,
+        search=search,
+        jinsia_filter=jinsia_filter,
+        subzone_filter=subzone_filter
     )
 
 
-@app.route("/edit/<int:id>", methods=["GET", "POST"])
+# ============================================================
+# EDIT MEMBER
+# ============================================================
+
+@app.route(
+    "/members/<int:member_id>/edit",
+    methods=["GET", "POST"]
+)
+@login_required
 @permission_required("members.edit")
-def edit_member(id):
+def edit_member(member_id):
 
     db = get_db()
 
     member = db.execute(
         """
-        SELECT *
+        SELECT
+            id,
+            namba_ya_usajili,
+            jina_kamili,
+            makazi,
+            jinsia,
+            picha,
+            namba_ya_sim,
+            subzone_id,
+            created_at
         FROM waumini
         WHERE id = %s
         """,
-        (id,)
+        (member_id,)
     ).fetchone()
 
     if not member:
-        return render_template(
-            "404.html"
-        ), 404
+        abort(404)
+
+    subzones = get_active_subzones()
 
     if request.method == "POST":
 
@@ -940,64 +1997,131 @@ def edit_member(id):
             ""
         ).strip()
 
-        if not jina_kamili or not makazi or not jinsia or not namba_ya_sim:
+        subzone_id = request.form.get(
+            "subzone_id",
+            ""
+        ).strip()
+
+        if not jina_kamili:
+
+            flash(
+                "Jina kamili linahitajika.",
+                "error"
+            )
 
             return render_template(
                 "edit.html",
                 member=member,
-                error="Tafadhali jaza sehemu zote muhimu."
+                subzones=subzones
             )
 
-        picha_filename = member["picha"]
+        if not makazi:
 
-        file = request.files.get("picha")
+            flash(
+                "Makazi yanahitajika.",
+                "error"
+            )
 
-        if file and file.filename:
+            return render_template(
+                "edit.html",
+                member=member,
+                subzones=subzones
+            )
 
-            if not allowed_file(file.filename):
+        if not jinsia:
+
+            flash(
+                "Jinsia inahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "edit.html",
+                member=member,
+                subzones=subzones
+            )
+
+        if not namba_ya_sim:
+
+            flash(
+                "Namba ya simu inahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "edit.html",
+                member=member,
+                subzones=subzones
+            )
+
+        phone_pattern = (
+            r"^(0\d{9}|\+255\d{9})$"
+        )
+
+        if not re.match(
+            phone_pattern,
+            namba_ya_sim
+        ):
+
+            flash(
+                "Namba ya simu si sahihi.",
+                "error"
+            )
+
+            return render_template(
+                "edit.html",
+                member=member,
+                subzones=subzones
+            )
+
+        selected_subzone_id = None
+
+        if subzone_id:
+
+            try:
+
+                selected_subzone_id = int(
+                    subzone_id
+                )
+
+            except ValueError:
+
+                flash(
+                    "Subzone si sahihi.",
+                    "error"
+                )
 
                 return render_template(
                     "edit.html",
                     member=member,
-                    error="Aina ya picha hairuhusiwi."
+                    subzones=subzones
                 )
 
-            original_name = secure_filename(
-                file.filename
-            )
-
-            extension = original_name.rsplit(
-                ".",
-                1
-            )[1].lower()
-
-            new_filename = (
-                f"{uuid.uuid4().hex}.{extension}"
-            )
-
-            file.save(
-                os.path.join(
-                    UPLOAD_FOLDER,
-                    new_filename
+            selected_subzone = db.execute(
+                """
+                SELECT
+                    id
+                FROM subzones
+                WHERE id = %s
+                AND active = 1
+                """,
+                (
+                    selected_subzone_id,
                 )
-            )
+            ).fetchone()
 
-            if picha_filename:
+            if not selected_subzone:
 
-                old_path = os.path.join(
-                    UPLOAD_FOLDER,
-                    picha_filename
+                flash(
+                    "Subzone iliyochaguliwa haipo.",
+                    "error"
                 )
 
-                if os.path.exists(old_path):
-
-                    try:
-                        os.remove(old_path)
-
-                    except OSError:
-                        pass
-
-            picha_filename = new_filename
+                return render_template(
+                    "edit.html",
+                    member=member,
+                    subzones=subzones
+                )
 
         db.execute(
             """
@@ -1006,25 +2130,31 @@ def edit_member(id):
                 jina_kamili = %s,
                 makazi = %s,
                 jinsia = %s,
-                picha = %s,
-                namba_ya_sim = %s
+                namba_ya_sim = %s,
+                subzone_id = %s
             WHERE id = %s
             """,
             (
                 jina_kamili,
                 makazi,
                 jinsia,
-                picha_filename,
                 namba_ya_sim,
-                id
+                selected_subzone_id,
+                member_id
             )
         )
 
-        db.commit()
-
         log_action(
-            "edit_member",
-            f"Mwanachama {id} amehaririwa."
+            "EDIT_MEMBER",
+            (
+                "Edited member ID "
+                f"{member_id}"
+            )
+        )
+
+        flash(
+            "Taarifa za muumini zimebadilishwa.",
+            "success"
         )
 
         return redirect(
@@ -1033,75 +2163,655 @@ def edit_member(id):
 
     return render_template(
         "edit.html",
-        member=member
+        member=member,
+        subzones=subzones
     )
 
 
-@app.route("/delete/<int:id>", methods=["POST", "GET"])
+# ============================================================
+# DELETE MEMBER
+# ============================================================
+
+@app.route(
+    "/members/<int:member_id>/delete",
+    methods=["GET", "POST"]
+)
+@login_required
 @permission_required("members.delete")
-def delete_member(id):
+def delete_member(member_id):
 
     db = get_db()
 
     member = db.execute(
         """
-        SELECT *
+        SELECT
+            id,
+            namba_ya_usajili,
+            jina_kamili,
+            picha
         FROM waumini
         WHERE id = %s
         """,
-        (id,)
+        (member_id,)
     ).fetchone()
 
     if not member:
-        return render_template(
-            "404.html"
-        ), 404
+        abort(404)
 
-    if member["picha"]:
+    if request.method == "POST":
 
-        image_path = os.path.join(
-            UPLOAD_FOLDER,
+        db.execute(
+            """
+            DELETE FROM waumini
+            WHERE id = %s
+            """,
+            (member_id,)
+        )
+
+        delete_uploaded_file(
             member["picha"]
         )
 
-        if os.path.exists(image_path):
+        log_action(
+            "DELETE_MEMBER",
+            (
+                "Deleted member: "
+                f"{member['jina_kamili']}"
+            )
+        )
 
-            try:
-                os.remove(image_path)
+        flash(
+            "Muumini amefutwa.",
+            "success"
+        )
 
-            except OSError:
-                pass
+        return redirect(
+            url_for("members")
+        )
+
+    return render_template(
+        "delete.html",
+        member=member
+    )
+
+
+# ============================================================
+# UPLOAD / REPLACE MEMBER PHOTO
+# ============================================================
+
+@app.route(
+    "/members/<int:member_id>/upload",
+    methods=["POST"]
+)
+@login_required
+@permission_required("members.edit")
+def upload_member_photo(member_id):
+
+    db = get_db()
+
+    member = db.execute(
+        """
+        SELECT
+            id,
+            jina_kamili,
+            picha
+        FROM waumini
+        WHERE id = %s
+        """,
+        (member_id,)
+    ).fetchone()
+
+    if not member:
+        abort(404)
+
+    image = request.files.get(
+        "picha"
+    )
+
+    if not image or not image.filename:
+
+        flash(
+            "Chagua picha kwanza.",
+            "error"
+        )
+
+        return redirect(
+            url_for(
+                "edit_member",
+                member_id=member_id
+            )
+        )
+
+    if not allowed_file(
+        image.filename
+    ):
+
+        flash(
+            "Aina ya picha hairuhusiwi.",
+            "error"
+        )
+
+        return redirect(
+            url_for(
+                "edit_member",
+                member_id=member_id
+            )
+        )
+
+    new_filename = (
+        save_uploaded_image(image)
+    )
+
+    if not new_filename:
+
+        flash(
+            "Picha haikuweza kuhifadhiwa.",
+            "error"
+        )
+
+        return redirect(
+            url_for(
+                "edit_member",
+                member_id=member_id
+            )
+        )
+
+    old_filename = member["picha"]
 
     db.execute(
         """
-        DELETE FROM waumini
+        UPDATE waumini
+        SET picha = %s
         WHERE id = %s
         """,
-        (id,)
+        (
+            new_filename,
+            member_id
+        )
     )
 
-    db.commit()
+    delete_uploaded_file(
+        old_filename
+    )
 
     log_action(
-        "delete_member",
-        f"Mwanachama {id} amefutwa."
+        "UPLOAD_MEMBER_PHOTO",
+        (
+            "Updated photo for member ID "
+            f"{member_id}"
+        )
+    )
+
+    flash(
+        "Picha imebadilishwa.",
+        "success"
     )
 
     return redirect(
-        url_for("members")
+        url_for(
+            "edit_member",
+            member_id=member_id
+        )
     )
 
 
-@app.route("/uploads/<filename>")
-def uploaded_file(filename):
+# ============================================================
+# CHURCH SETTINGS
+# ============================================================
 
-    return send_from_directory(
-        UPLOAD_FOLDER,
-        filename
+@app.route(
+    "/settings",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("settings.view")
+def church_settings():
+
+    db = get_db()
+
+    settings = get_church_settings()
+
+    if request.method == "POST":
+
+        if (
+            not (
+                get_current_admin()
+                and (
+                    get_current_admin()
+                    .get("role_name")
+                    == "superadmin"
+                    or "settings.manage"
+                    in get_current_admin()
+                    .get(
+                        "permissions",
+                        set()
+                    )
+                )
+            )
+        ):
+
+            return render_template(
+                "403.html"
+            ), 403
+
+        church_name = request.form.get(
+            "church_name",
+            ""
+        ).strip()
+
+        address = request.form.get(
+            "address",
+            ""
+        ).strip()
+
+        phone = request.form.get(
+            "phone",
+            ""
+        ).strip()
+
+        email = request.form.get(
+            "email",
+            ""
+        ).strip()
+
+        old_logo = settings["logo"]
+
+        logo_filename = old_logo
+
+        logo = request.files.get(
+            "logo"
+        )
+
+        if logo and logo.filename:
+
+            if not allowed_file(
+                logo.filename
+            ):
+
+                flash(
+                    "Aina ya logo hairuhusiwi.",
+                    "error"
+                )
+
+                return render_template(
+                    "settings.html",
+                    settings=settings
+                )
+
+            logo_filename = (
+                save_uploaded_image(
+                    logo
+                )
+            )
+
+            if not logo_filename:
+
+                flash(
+                    "Logo haikuweza kuhifadhiwa.",
+                    "error"
+                )
+
+                return render_template(
+                    "settings.html",
+                    settings=settings
+                )
+
+        db.execute(
+            """
+            UPDATE church_settings
+            SET
+                church_name = %s,
+                address = %s,
+                phone = %s,
+                email = %s,
+                logo = %s
+            WHERE id = 1
+            """,
+            (
+                church_name,
+                address,
+                phone,
+                email,
+                logo_filename
+            )
+        )
+
+        if (
+            logo_filename != old_logo
+        ):
+
+            delete_uploaded_file(
+                old_logo
+            )
+
+        log_action(
+            "UPDATE_CHURCH_SETTINGS",
+            "Updated church settings"
+        )
+
+        flash(
+            "Mipangilio ya kanisa imehifadhiwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for("church_settings")
+        )
+
+    return render_template(
+        "settings.html",
+        settings=settings
     )
 
+
+# ============================================================
+# SUBZONES
+# ============================================================
+
+@app.route("/subzones")
+@login_required
+@permission_required("subzones.view")
+def subzones():
+
+    subzone_list = (
+        get_all_subzones_with_counts()
+    )
+
+    return render_template(
+        "subzones.html",
+        subzones=subzone_list
+    )
+
+
+@app.route(
+    "/subzones/create",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("subzones.create")
+def create_subzone():
+
+    if request.method == "POST":
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        description = request.form.get(
+            "description",
+            ""
+        ).strip()
+
+        if not name:
+
+            flash(
+                "Jina la subzone linahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "subzones.html",
+                subzones=(
+                    get_all_subzones_with_counts()
+                )
+            )
+
+        db = get_db()
+
+        existing = db.execute(
+            """
+            SELECT
+                id
+            FROM subzones
+            WHERE LOWER(name)
+                = LOWER(%s)
+            """,
+            (name,)
+        ).fetchone()
+
+        if existing:
+
+            flash(
+                "Subzone hiyo tayari ipo.",
+                "error"
+            )
+
+            return redirect(
+                url_for("subzones")
+            )
+
+        db.execute(
+            """
+            INSERT INTO subzones (
+                name,
+                description,
+                active
+            )
+            VALUES (
+                %s,
+                %s,
+                1
+            )
+            """,
+            (
+                name,
+                description
+            )
+        )
+
+        log_action(
+            "CREATE_SUBZONE",
+            f"Created subzone: {name}"
+        )
+
+        flash(
+            "Subzone limeongezwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for("subzones")
+        )
+
+    return render_template(
+        "subzones.html",
+        subzones=(
+            get_all_subzones_with_counts()
+        )
+    )
+
+
+@app.route(
+    "/subzones/<int:subzone_id>/edit",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("subzones.edit")
+def edit_subzone(subzone_id):
+
+    db = get_db()
+
+    subzone = db.execute(
+        """
+        SELECT
+            id,
+            name,
+            description,
+            active
+        FROM subzones
+        WHERE id = %s
+        """,
+        (subzone_id,)
+    ).fetchone()
+
+    if not subzone:
+        abort(404)
+
+    if request.method == "POST":
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        description = request.form.get(
+            "description",
+            ""
+        ).strip()
+
+        if not name:
+
+            flash(
+                "Jina la subzone linahitajika.",
+                "error"
+            )
+
+            return redirect(
+                url_for(
+                    "edit_subzone",
+                    subzone_id=subzone_id
+                )
+            )
+
+        duplicate = db.execute(
+            """
+            SELECT
+                id
+            FROM subzones
+            WHERE LOWER(name)
+                = LOWER(%s)
+            AND id <> %s
+            """,
+            (
+                name,
+                subzone_id
+            )
+        ).fetchone()
+
+        if duplicate:
+
+            flash(
+                "Jina hilo tayari linatumika.",
+                "error"
+            )
+
+            return redirect(
+                url_for(
+                    "edit_subzone",
+                    subzone_id=subzone_id
+                )
+            )
+
+        db.execute(
+            """
+            UPDATE subzones
+            SET
+                name = %s,
+                description = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            """,
+            (
+                name,
+                description,
+                subzone_id
+            )
+        )
+
+        log_action(
+            "EDIT_SUBZONE",
+            (
+                "Edited subzone ID "
+                f"{subzone_id}"
+            )
+        )
+
+        flash(
+            "Subzone limebadilishwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for("subzones")
+        )
+
+    return render_template(
+        "subzones.html",
+        subzones=(
+            get_all_subzones_with_counts()
+        ),
+        edit_subzone=subzone
+    )
+
+
+@app.route(
+    "/subzones/<int:subzone_id>/delete",
+    methods=["POST"]
+)
+@login_required
+@permission_required("subzones.delete")
+def delete_subzone(subzone_id):
+
+    db = get_db()
+
+    subzone = db.execute(
+        """
+        SELECT
+            id,
+            name
+        FROM subzones
+        WHERE id = %s
+        """,
+        (subzone_id,)
+    ).fetchone()
+
+    if not subzone:
+        abort(404)
+
+    # IMPORTANT:
+    # Existing database uses INTEGER active:
+    # 1 = active
+    # 0 = inactive
+    #
+    # We deactivate rather than physically deleting so
+    # existing member relationships are preserved.
+
+    db.execute(
+        """
+        UPDATE subzones
+        SET
+            active = 0,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+        """,
+        (subzone_id,)
+    )
+
+    log_action(
+        "DELETE_SUBZONE",
+        (
+            "Deactivated subzone: "
+            f"{subzone['name']}"
+        )
+    )
+
+    flash(
+        "Subzone limezuiwa kutumika.",
+        "success"
+    )
+
+    return redirect(
+        url_for("subzones")
+    )
+
+
+# ============================================================
+# ADMIN MANAGEMENT
+# ============================================================
 
 @app.route("/admins")
+@login_required
 @permission_required("admins.view")
 def admins():
 
@@ -1110,29 +2820,68 @@ def admins():
     admin_list = db.execute(
         """
         SELECT
-            admins.id,
-            admins.username,
-            admins.full_name,
-            admins.active,
-            admins.created_at,
-            admins.last_login,
-            roles.name AS role_name
-        FROM admins
-        LEFT JOIN roles
-            ON admins.role_id = roles.id
-        ORDER BY admins.id DESC
+            a.id,
+            a.username,
+            a.full_name,
+            a.email,
+            a.is_active,
+            a.created_at,
+            a.last_login,
+            r.name AS role_name
+        FROM admins a
+        LEFT JOIN roles r
+            ON r.id = a.role_id
+        ORDER BY a.id ASC
+        """
+    ).fetchall()
+
+    roles = db.execute(
+        """
+        SELECT
+            id,
+            name
+        FROM roles
+        ORDER BY
+            CASE name
+                WHEN 'superadmin'
+                    THEN 1
+                WHEN 'admin'
+                    THEN 2
+                WHEN 'secretary'
+                    THEN 3
+                WHEN 'treasurer'
+                    THEN 4
+                ELSE 5
+            END
         """
     ).fetchall()
 
     return render_template(
         "admins.html",
-        admins=admin_list
+        admins=admin_list,
+        roles=roles
     )
 
 
-@app.route("/admins/create", methods=["GET", "POST"])
+@app.route(
+    "/admins/create",
+    methods=["GET", "POST"]
+)
+@login_required
 @permission_required("admins.create")
 def create_admin():
+
+    db = get_db()
+
+    roles = db.execute(
+        """
+        SELECT
+            id,
+            name
+        FROM roles
+        ORDER BY id
+        """
+    ).fetchall()
 
     if request.method == "POST":
 
@@ -1146,83 +2895,174 @@ def create_admin():
             ""
         ).strip()
 
+        email = request.form.get(
+            "email",
+            ""
+        ).strip()
+
         password = request.form.get(
             "password",
             ""
         )
 
-        role_name = request.form.get(
-            "role",
+        role_id = request.form.get(
+            "role_id",
             ""
         ).strip()
 
-        if not username or not full_name or not password or not role_name:
+        if not username:
+
+            flash(
+                "Username inahitajika.",
+                "error"
+            )
 
             return render_template(
                 "create_admin.html",
-                error="Tafadhali jaza sehemu zote."
+                roles=roles
             )
 
-        db = get_db()
+        if not full_name:
+
+            flash(
+                "Jina kamili linahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "create_admin.html",
+                roles=roles
+            )
+
+        if not password:
+
+            flash(
+                "Password inahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "create_admin.html",
+                roles=roles
+            )
+
+        if len(password) < 8:
+
+            flash(
+                "Password lazima iwe na angalau herufi 8.",
+                "error"
+            )
+
+            return render_template(
+                "create_admin.html",
+                roles=roles
+            )
+
+        try:
+
+            role_id_int = int(
+                role_id
+            )
+
+        except ValueError:
+
+            flash(
+                "Role si sahihi.",
+                "error"
+            )
+
+            return render_template(
+                "create_admin.html",
+                roles=roles
+            )
 
         role = db.execute(
             """
-            SELECT id
+            SELECT
+                id,
+                name
             FROM roles
-            WHERE name = %s
+            WHERE id = %s
             """,
-            (role_name,)
+            (role_id_int,)
         ).fetchone()
 
         if not role:
 
+            flash(
+                "Role haipo.",
+                "error"
+            )
+
             return render_template(
                 "create_admin.html",
-                error="Role haipo."
+                roles=roles
             )
 
         existing = db.execute(
             """
-            SELECT id
+            SELECT
+                id
             FROM admins
-            WHERE username = %s
+            WHERE LOWER(username)
+                = LOWER(%s)
             """,
             (username,)
         ).fetchone()
 
         if existing:
 
+            flash(
+                "Username hiyo tayari ipo.",
+                "error"
+            )
+
             return render_template(
                 "create_admin.html",
-                error="Username tayari ipo."
+                roles=roles
             )
 
         db.execute(
             """
-            INSERT INTO admins
-            (
+            INSERT INTO admins (
                 username,
-                full_name,
                 password_hash,
-                active,
-                role_id
+                full_name,
+                email,
+                role_id,
+                is_active
             )
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES (
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                TRUE
+            )
             """,
             (
                 username,
+                generate_password_hash(
+                    password
+                ),
                 full_name,
-                generate_password_hash(password),
-                1,
-                role["id"]
+                email,
+                role_id_int
             )
         )
 
-        db.commit()
-
         log_action(
-            "create_admin",
-            f"Admin mpya {username} ameundwa."
+            "CREATE_ADMIN",
+            (
+                "Created admin: "
+                f"{username}"
+            )
+        )
+
+        flash(
+            "Admin ameundwa.",
+            "success"
         )
 
         return redirect(
@@ -1230,92 +3070,87 @@ def create_admin():
         )
 
     return render_template(
-        "create_admin.html"
+        "create_admin.html",
+        roles=roles
     )
 
 
-@app.route("/admins/<int:id>/activate", methods=["POST"])
+@app.route(
+    "/admins/<int:admin_id>/toggle",
+    methods=["POST"]
+)
+@login_required
 @permission_required("admins.manage")
-def activate_admin(id):
+def toggle_admin(admin_id):
 
     db = get_db()
 
-    admin = db.execute(
-        """
-        SELECT username
-        FROM admins
-        WHERE id = %s
-        """,
-        (id,)
-    ).fetchone()
-
-    if not admin:
-        return render_template(
-            "404.html"
-        ), 404
-
-    db.execute(
-        """
-        UPDATE admins
-        SET active = 1
-        WHERE id = %s
-        """,
-        (id,)
-    )
-
-    db.commit()
-
-    log_action(
-        "activate_admin",
-        f"Admin {admin['username']} amewezeshwa."
-    )
-
-    return redirect(
-        url_for("admins")
-    )
-
-
-@app.route("/admins/<int:id>/deactivate", methods=["POST"])
-@permission_required("admins.manage")
-def deactivate_admin(id):
-
     current_admin = get_current_admin()
 
-    if current_admin and current_admin["id"] == id:
+    if (
+        current_admin
+        and current_admin["id"]
+        == admin_id
+    ):
+
+        flash(
+            "Huwezi kubadilisha status yako mwenyewe.",
+            "error"
+        )
+
         return redirect(
             url_for("admins")
         )
 
-    db = get_db()
-
     admin = db.execute(
         """
-        SELECT username
+        SELECT
+            id,
+            username,
+            is_active
         FROM admins
         WHERE id = %s
         """,
-        (id,)
+        (admin_id,)
     ).fetchone()
 
     if not admin:
-        return render_template(
-            "404.html"
-        ), 404
+        abort(404)
+
+    new_status = not admin["is_active"]
 
     db.execute(
         """
         UPDATE admins
-        SET active = 0
+        SET
+            is_active = %s
         WHERE id = %s
         """,
-        (id,)
+        (
+            new_status,
+            admin_id
+        )
     )
 
-    db.commit()
+    action = (
+        "ACTIVATE_ADMIN"
+        if new_status
+        else "DEACTIVATE_ADMIN"
+    )
 
     log_action(
-        "deactivate_admin",
-        f"Admin {admin['username']} amezimwa."
+        action,
+        (
+            f"Changed admin "
+            f"{admin['username']} "
+            f"active status to "
+            f"{new_status}"
+        )
+    )
+
+    flash(
+        "Status ya admin imebadilishwa.",
+        "success"
     )
 
     return redirect(
@@ -1323,11 +3158,16 @@ def deactivate_admin(id):
     )
 
 
-@app.route("/change-password", methods=["GET", "POST"])
-@login_required()
-def change_password():
+# ============================================================
+# CHANGE PASSWORD
+# ============================================================
 
-    admin = get_current_admin()
+@app.route(
+    "/change-password",
+    methods=["GET", "POST"]
+)
+@login_required
+def change_password():
 
     if request.method == "POST":
 
@@ -1346,58 +3186,91 @@ def change_password():
             ""
         )
 
+        admin = get_current_admin()
+
         db = get_db()
 
-        row = db.execute(
+        stored_admin = db.execute(
             """
-            SELECT password_hash
+            SELECT
+                id,
+                password_hash
             FROM admins
             WHERE id = %s
             """,
             (admin["id"],)
         ).fetchone()
 
-        if not row or not check_password_hash(
-            row["password_hash"],
+        if not stored_admin:
+
+            session.clear()
+
+            return redirect(
+                url_for("login")
+            )
+
+        if not check_password_hash(
+            stored_admin["password_hash"],
             current_password
         ):
 
+            flash(
+                "Password ya sasa si sahihi.",
+                "error"
+            )
+
             return render_template(
-                "change_password.html",
-                error="Password ya sasa si sahihi."
+                "change_password.html"
             )
 
         if len(new_password) < 8:
 
-            return render_template(
-                "change_password.html",
-                error="Password mpya lazima iwe na angalau herufi 8."
+            flash(
+                "Password mpya lazima iwe na angalau herufi 8.",
+                "error"
             )
 
-        if new_password != confirm_password:
+            return render_template(
+                "change_password.html"
+            )
+
+        if (
+            new_password
+            != confirm_password
+        ):
+
+            flash(
+                "Password mpya hazifanani.",
+                "error"
+            )
 
             return render_template(
-                "change_password.html",
-                error="Password mpya hazifanani."
+                "change_password.html"
             )
 
         db.execute(
             """
             UPDATE admins
-            SET password_hash = %s
+            SET
+                password_hash = %s
             WHERE id = %s
             """,
             (
-                generate_password_hash(new_password),
+                generate_password_hash(
+                    new_password
+                ),
                 admin["id"]
             )
         )
 
-        db.commit()
-
         log_action(
-            "change_password",
-            "Admin amebadilisha password yake."
+            "CHANGE_PASSWORD",
+            "Admin changed password"
+        )
+
+        flash(
+            "Password imebadilishwa.",
+            "success"
         )
 
         return redirect(
@@ -1409,7 +3282,12 @@ def change_password():
     )
 
 
+# ============================================================
+# AUDIT LOGS
+# ============================================================
+
 @app.route("/audit-logs")
+@login_required
 @permission_required("audit.view")
 def audit_logs():
 
@@ -1418,16 +3296,19 @@ def audit_logs():
     logs = db.execute(
         """
         SELECT
-            audit_logs.id,
-            audit_logs.action,
-            audit_logs.details,
-            audit_logs.created_at,
-            admins.username,
-            admins.full_name
-        FROM audit_logs
-        LEFT JOIN admins
-            ON audit_logs.admin_id = admins.id
-        ORDER BY audit_logs.id DESC
+            l.id,
+            l.action,
+            l.description,
+            l.ip_address,
+            l.created_at,
+            a.username,
+            a.full_name
+        FROM audit_logs l
+        LEFT JOIN admins a
+            ON a.id = l.admin_id
+        ORDER BY
+            l.created_at DESC,
+            l.id DESC
         """
     ).fetchall()
 
@@ -1436,6 +3317,483 @@ def audit_logs():
         logs=logs
     )
 
+
+# ============================================================
+# ANNOUNCEMENTS
+# ============================================================
+
+
+@app.route("/announcements")
+@login_required
+@permission_required(
+    "announcements.view"
+)
+def announcements():
+
+    db = get_db()
+
+    announcement_list = db.execute(
+        """
+        SELECT
+            id,
+            title,
+            content,
+            published,
+            image,
+            created_at,
+            updated_at
+        FROM announcements
+        ORDER BY
+            created_at DESC
+        """
+    ).fetchall()
+
+    return render_template(
+        "announcements.html",
+        announcements=announcement_list
+    )
+
+
+
+@app.route(
+    "/announcements/create",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required(
+    "announcements.create"
+)
+
+def create_announcement():
+
+    if request.method == "POST":
+
+        title = request.form.get(
+            "title",
+            ""
+        ).strip()
+
+        content = request.form.get(
+            "content",
+            ""
+        ).strip()
+
+        publish = (
+            request.form.get(
+                "published"
+            ) == "on"
+        )
+
+        form_data = {
+            "title": title,
+            "content": content,
+            "published": publish
+        }
+
+        if not title:
+
+            flash(
+                "Kichwa cha tangazo kinahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "create_announcement.html",
+                form_data=form_data,
+                editing=False
+            )
+
+        if not content:
+
+            flash(
+                "Maudhui ya tangazo yanahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "create_announcement.html",
+                form_data=form_data,
+                editing=False
+            )
+
+        image_file = request.files.get("image")
+
+        image_filename = None
+
+        if image_file and image_file.filename:
+
+            image_filename = save_uploaded_image(
+                image_file
+            )
+
+            if not image_filename:
+
+                flash(
+                    "Picha haikukubalika. Tumia JPG, JPEG, PNG au WEBP chini ya 5MB.",
+                    "error"
+                )
+
+                return render_template(
+                    "create_announcement.html",
+                    form_data=form_data,
+                    editing=False
+                )
+
+        db = get_db()
+
+        db.execute(
+            """
+            INSERT INTO announcements (
+                title,
+                content,
+                published,
+                image
+            )
+            VALUES (
+                %s,
+                %s,
+                %s,
+                %s
+            )
+            """,
+            (
+                title,
+                content,
+                publish,
+                image_filename
+            )
+        )
+
+        log_action(
+            "CREATE_ANNOUNCEMENT",
+            (
+                "Created announcement: "
+                f"{title}"
+            )
+        )
+
+        flash(
+            "Tangazo limeongezwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for("announcements")
+        )
+
+    return render_template(
+        "create_announcement.html",
+        form_data=None,
+        editing=False
+    )
+
+
+
+
+@app.route(
+    "/announcements/<int:announcement_id>/edit",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required(
+    "announcements.edit"
+)
+
+def edit_announcement(
+    announcement_id
+):
+
+    db = get_db()
+
+    announcement = db.execute(
+        """
+        SELECT
+            id,
+            title,
+            content,
+            published,
+            image,
+            created_at,
+            updated_at
+        FROM announcements
+        WHERE id = %s
+        """,
+        (announcement_id,)
+    ).fetchone()
+
+    if not announcement:
+        abort(404)
+
+    if request.method == "POST":
+
+        title = request.form.get(
+            "title",
+            ""
+        ).strip()
+
+        content = request.form.get(
+            "content",
+            ""
+        ).strip()
+
+        publish = (
+            request.form.get(
+                "published"
+            ) == "on"
+        )
+
+        form_data = {
+            "title": title,
+            "content": content,
+            "published": publish
+        }
+
+        if not title:
+
+            flash(
+                "Kichwa cha tangazo kinahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "create_announcement.html",
+                announcement=announcement,
+                form_data=form_data,
+                editing=True
+            )
+
+        if not content:
+
+            flash(
+                "Maudhui ya tangazo yanahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "create_announcement.html",
+                announcement=announcement,
+                form_data=form_data,
+                editing=True
+            )
+
+        image_file = request.files.get("image")
+
+        image_filename = announcement["image"]
+
+        if image_file and image_file.filename:
+
+            new_image_filename = save_uploaded_image(
+                image_file
+            )
+
+            if not new_image_filename:
+
+                flash(
+                    "Picha haikukubalika. Tumia JPG, JPEG, PNG au WEBP chini ya 5MB.",
+                    "error"
+                )
+
+                return render_template(
+                    "create_announcement.html",
+                    announcement=announcement,
+                    form_data=form_data,
+                    editing=True
+                )
+
+            if announcement["image"]:
+
+                delete_uploaded_file(
+                    announcement["image"]
+                )
+
+            image_filename = new_image_filename
+
+        db.execute(
+            """
+            UPDATE announcements
+            SET
+                title = %s,
+                content = %s,
+                published = %s,
+                image = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            """,
+            (
+                title,
+                content,
+                publish,
+                image_filename,
+                announcement_id
+            )
+        )
+
+        log_action(
+            "EDIT_ANNOUNCEMENT",
+            (
+                "Edited announcement ID "
+                f"{announcement_id}"
+            )
+        )
+
+        flash(
+            "Tangazo limebadilishwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for("announcements")
+        )
+
+    return render_template(
+        "create_announcement.html",
+        announcement=announcement,
+        form_data=None,
+        editing=True
+    )
+
+
+
+
+@app.route(
+    "/announcements/<int:announcement_id>/toggle",
+    methods=["POST"]
+)
+@login_required
+@permission_required(
+    "announcements.edit"
+)
+def toggle_announcement(
+    announcement_id
+):
+
+    db = get_db()
+
+    announcement = db.execute(
+        """
+        SELECT
+            id,
+            title,
+            published
+        FROM announcements
+        WHERE id = %s
+        """,
+        (announcement_id,)
+    ).fetchone()
+
+    if not announcement:
+        abort(404)
+
+    new_status = (
+        not announcement["published"]
+    )
+
+    db.execute(
+        """
+        UPDATE announcements
+        SET
+            published = %s,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+        """,
+        (
+            new_status,
+            announcement_id
+        )
+    )
+
+    action = (
+        "PUBLISH_ANNOUNCEMENT"
+        if new_status
+        else "UNPUBLISH_ANNOUNCEMENT"
+    )
+
+    log_action(
+        action,
+        (
+            f"Changed announcement ID "
+            f"{announcement_id} "
+            f"published status to "
+            f"{new_status}"
+        )
+    )
+
+    if new_status:
+
+        flash(
+            "Tangazo limechapishwa.",
+            "success"
+        )
+
+    else:
+
+        flash(
+            "Tangazo limeondolewa kwenye ukurasa wa umma.",
+            "success"
+        )
+
+    return redirect(
+        url_for("announcements")
+    )
+
+
+@app.route(
+    "/announcements/<int:announcement_id>/delete",
+    methods=["POST"]
+)
+@login_required
+@permission_required(
+    "announcements.delete"
+)
+def delete_announcement(
+    announcement_id
+):
+
+    db = get_db()
+
+    announcement = db.execute(
+        """
+        SELECT
+            id,
+            title
+        FROM announcements
+        WHERE id = %s
+        """,
+        (announcement_id,)
+    ).fetchone()
+
+    if not announcement:
+        abort(404)
+
+    db.execute(
+        """
+        DELETE FROM announcements
+        WHERE id = %s
+        """,
+        (announcement_id,)
+    )
+
+    log_action(
+        "DELETE_ANNOUNCEMENT",
+        (
+            "Deleted announcement: "
+            f"{announcement['title']}"
+        )
+    )
+
+    flash(
+        "Tangazo limefutwa.",
+        "success"
+    )
+
+    return redirect(
+        url_for("announcements")
+    )
+
+
+# ============================================================
+# ERROR HANDLERS
+# ============================================================
 
 @app.errorhandler(403)
 def forbidden(error):
@@ -1446,7 +3804,7 @@ def forbidden(error):
 
 
 @app.errorhandler(404)
-def not_found(error):
+def page_not_found(error):
 
     return render_template(
         "404.html"
@@ -1454,27 +3812,39 @@ def not_found(error):
 
 
 @app.errorhandler(413)
-def too_large(error):
+def request_entity_too_large(error):
 
-    return render_template(
-        "error.html",
-        message="Faili ni kubwa sana."
-    ), 413
+    flash(
+        "Faili ni kubwa sana. Maximum ni 5MB.",
+        "error"
+    )
+
+    return redirect(
+        request.referrer
+        or url_for("home")
+    )
 
 
 @app.errorhandler(500)
-def server_error(error):
+def internal_server_error(error):
 
     return render_template(
-        "error.html",
-        message="Hitilafu ya mfumo imetokea."
+        "error.html"
     ), 500
+
+
+# ============================================================
+# INITIALIZE DATABASE
+# ============================================================
+
+with app.app_context():
+    init_database()
 
 
 if __name__ == "__main__":
 
     app.run(
-        debug=True,
         host="127.0.0.1",
-        port=5000
+        port=5000,
+        debug=True
     )

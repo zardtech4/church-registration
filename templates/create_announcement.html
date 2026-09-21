@@ -1,0 +1,379 @@
+
+<!DOCTYPE html>
+<html lang="sw">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {% if editing %}
+            Hariri Tangazo
+        {% else %}
+            Tangazo Jipya
+        {% endif %}
+
+        - {{ church_settings.church_name }}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<nav class="navbar">
+
+    <div class="nav-brand">
+        {{ church_settings.church_name }}
+    </div>
+
+
+    <div class="nav-links">
+
+        {% if can_view_dashboard %}
+            <a href="{{ url_for('dashboard') }}">
+                Dashboard
+            </a>
+        {% endif %}
+
+
+        {% if can_create_members %}
+            <a href="{{ url_for('register') }}">
+                Sajili
+            </a>
+        {% endif %}
+
+
+        {% if can_view_members %}
+            <a href="{{ url_for('members') }}">
+                Waumini
+            </a>
+        {% endif %}
+
+
+        {% if can_view_subzones %}
+            <a href="{{ url_for('subzones') }}">
+                Subzones
+            </a>
+        {% endif %}
+
+
+        {% if can_view_announcements %}
+            <a
+                href="{{ url_for('announcements') }}"
+                class="active"
+            >
+                Matangazo
+            </a>
+        {% endif %}
+
+
+        {% if can_view_settings %}
+            <a href="{{ url_for('church_settings') }}">
+                Settings
+            </a>
+        {% endif %}
+
+
+        {% if can_view_admins %}
+            <a href="{{ url_for('admins') }}">
+                Admins
+            </a>
+        {% endif %}
+
+
+        {% if can_view_audit %}
+            <a href="{{ url_for('audit_logs') }}">
+                Audit Logs
+            </a>
+        {% endif %}
+
+
+        {% if current_admin %}
+
+            <a href="{{ url_for('change_password') }}">
+                Change Password
+            </a>
+
+            <a href="{{ url_for('logout') }}">
+                Logout
+            </a>
+
+        {% endif %}
+
+    </div>
+
+</nav>
+
+
+
+<main class="announcement-form-container">
+
+
+    <section class="announcement-form-header">
+
+        <div>
+
+            <span class="dashboard-label">
+                HABARI ZA KANISA
+            </span>
+
+            <h1>
+
+                {% if editing %}
+                    Hariri Tangazo
+                {% else %}
+                    Tangazo Jipya
+                {% endif %}
+
+            </h1>
+
+            <p>
+
+                {% if editing %}
+
+                    Badilisha taarifa za tangazo
+                    lililopo.
+
+                {% else %}
+
+                    Tengeneza tangazo jipya
+                    la kanisa.
+
+                {% endif %}
+
+            </p>
+
+        </div>
+
+
+        <a
+            href="{{ url_for('announcements') }}"
+            class="secondary-button"
+        >
+            ← RUDI KWENYE MATANGAZO
+        </a>
+
+    </section>
+
+
+
+    <section class="announcement-form-card">
+
+
+        {% if form_data %}
+
+            {% set current_title = form_data["title"] %}
+            {% set current_content = form_data["content"] %}
+            {% set current_published = form_data["published"] %}
+
+        {% elif announcement %}
+
+            {% set current_title = announcement["title"] %}
+            {% set current_content = announcement["content"] %}
+            {% set current_published = announcement["published"] %}
+
+        {% else %}
+
+            {% set current_title = "" %}
+            {% set current_content = "" %}
+            {% set current_published = False %}
+
+        {% endif %}
+
+
+
+        {% if editing %}
+
+            <form
+                method="POST"
+                enctype="multipart/form-data"
+                action="{{ url_for(
+                    'edit_announcement',
+                    announcement_id=announcement['id']
+                ) }}"
+            >
+
+        {% else %}
+
+            <form
+                method="POST"
+                enctype="multipart/form-data"
+                action="{{ url_for('create_announcement') }}"
+            >
+
+        {% endif %}
+
+
+
+            <div class="announcement-form-group">
+
+                <label for="title">
+                    Kichwa cha Tangazo
+                </label>
+
+                <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value="{{ current_title }}"
+                    placeholder="Mfano: Ibada ya Jumapili"
+                    maxlength="200"
+                    required
+                >
+
+                <small>
+                    Weka kichwa kifupi na kinachoeleweka.
+                </small>
+
+            </div>
+
+
+
+            <div class="announcement-form-group">
+
+                <label for="content">
+                    Maudhui ya Tangazo
+                </label>
+
+                <textarea
+                    id="content"
+                    name="content"
+                    rows="10"
+                    placeholder="Andika taarifa ya tangazo hapa..."
+                    required
+                >{{ current_content }}</textarea>
+
+                <small>
+                    Andika taarifa kamili unayotaka waumini waione.
+                </small>
+
+            </div>
+
+
+
+            <!-- ANNOUNCEMENT IMAGE -->
+
+            <div class="announcement-form-group">
+
+                <label for="image">
+                    Picha ya Tangazo
+                </label>
+
+
+                {% if editing and announcement and announcement["image"] %}
+
+                    <div class="current-announcement-image">
+
+                        <img
+                            src="{{ url_for(
+                                'static',
+                                filename='Uploads/' + announcement['image']
+                            ) }}"
+                            alt="{{ announcement['title'] }}"
+                        >
+
+                        <small>
+                            Picha iliyopo. Ukichagua picha mpya,
+                            hii itabadilishwa.
+                        </small>
+
+                    </div>
+
+                {% endif %}
+
+
+                <input
+                    type="file"
+                    id="image"
+                    name="image"
+                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                >
+
+                <small>
+                    Picha ni hiari. Tumia JPG, JPEG, PNG au WEBP,
+                    hadi 5MB.
+                </small>
+
+            </div>
+
+
+
+            <div class="announcement-publish-option">
+
+                <label class="announcement-checkbox">
+
+                    <input
+                        type="checkbox"
+                        name="published"
+                        {% if current_published %}
+                            checked
+                        {% endif %}
+                    >
+
+                    <span>
+                        Chapisha tangazo sasa
+                    </span>
+
+                </label>
+
+
+                <p>
+                    Tangazo likichapishwa litaonekana
+                    kwenye ukurasa wa mwanzo wa kanisa.
+                </p>
+
+            </div>
+
+
+
+            <div class="announcement-form-actions">
+
+                <a
+                    href="{{ url_for('announcements') }}"
+                    class="btn btn-secondary"
+                >
+                    CANCEL
+                </a>
+
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+
+                    {% if editing %}
+                        HIFADHI MABADILIKO
+                    {% else %}
+                        HIFADHI TANGAZO
+                    {% endif %}
+
+                </button>
+
+            </div>
+
+
+        </form>
+
+
+    </section>
+
+
+</main>
+
+
+</body>
+
+</html>
+

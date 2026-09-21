@@ -45,6 +45,14 @@
                 Waumini
             </a>
 
+            {% if can_view_announcements %}
+
+                <a href="{{ url_for('announcements') }}">
+                    Matangazo
+                </a>
+
+            {% endif %}
+
             <a href="{{ url_for('admins') }}">
                 Admin & Security
             </a>
@@ -532,7 +540,7 @@
 
                                                     <form
                                                         method="POST"
-                                                        action="{{ url_for('deactivate_admin', id=admin['id']) }}"
+                                                        action="{{ url_for('toggle_admin', admin_id=admin['id']) }}"
                                                         class="admin-action-form"
                                                     >
 

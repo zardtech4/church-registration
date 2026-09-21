@@ -1,380 +1,476 @@
-
 <!DOCTYPE html>
 <html lang="sw">
 
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Orodha ya Waumini</title>
+    <title>
+        Waumini - {{ church_settings.church_name }}
+    </title>
 
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='style.css') }}"
     >
-
 </head>
-
 
 <body>
 
+<nav class="navbar">
 
-    <!-- NAVIGATION -->
+    <div class="nav-brand">
+        {{ church_settings.church_name }}
+    </div>
 
-    <nav class="navbar">
+    <div class="nav-links">
 
-        <div class="nav-brand">
-            USAJILI WA WAUMINI
-        </div>
-
-        <div class="nav-links">
-
-            <a href="/dashboard">
+        {% if can_view_dashboard %}
+            <a href="{{ url_for('dashboard') }}">
                 Dashboard
             </a>
+        {% endif %}
 
-            <a href="/">
+        {% if can_create_members %}
+            <a href="{{ url_for('register') }}">
                 Sajili
             </a>
+        {% endif %}
 
-            <a href="/members">
+        {% if can_view_members %}
+            <a
+                href="{{ url_for('members') }}"
+                class="active"
+            >
                 Waumini
             </a>
+        {% endif %}
 
-        </div>
+        {% if can_view_subzones %}
+            <a href="{{ url_for('subzones') }}">
+                Subzones
+            </a>
+        {% endif %}
 
-    </nav>
+        {% if can_view_settings %}
+            <a href="{{ url_for('church_settings') }}">
+                Settings
+            </a>
+        {% endif %}
+
+        {% if can_view_admins %}
+            <a href="{{ url_for('admins') }}">
+                Admins
+            </a>
+        {% endif %}
+
+        {% if can_view_audit %}
+            <a href="{{ url_for('audit_logs') }}">
+                Audit Logs
+            </a>
+        {% endif %}
+
+        {% if current_admin %}
+            <a href="{{ url_for('change_password') }}">
+                Change Password
+            </a>
+
+            <a href="{{ url_for('logout') }}">
+                Logout
+            </a>
+        {% endif %}
+
+    </div>
+
+</nav>
 
 
+<main class="page-container">
 
-    <!-- MEMBERS PAGE -->
+    <!-- PAGE HEADER -->
 
-    <main class="members-container">
+    <section class="page-header">
 
-
-        <!-- HEADER -->
-
-        <section class="members-header">
-
-            <span class="dashboard-label">
-                USIMAMIZI WA WAUMINI
-            </span>
+        <div>
 
             <h1>
-                Orodha ya Waumini
+                USIMAMIZI WA WAUMINI
             </h1>
 
             <p>
-                Angalia, tafuta, hariri au futa taarifa za waumini.
+                Orodha ya waumini waliosajiliwa katika kanisa.
             </p>
 
-        </section>
+        </div>
+
+    </section>
 
 
+    <!-- MEMBER COUNT -->
 
-        <!-- TOTAL -->
+    <section class="stats-grid">
 
-        <section class="members-summary">
+        <div class="stat-card">
 
-            <div class="summary-icon">
-                👥
+            <h3>
+                JUMLA YA WAUMINI
+            </h3>
+
+            <div class="stat-number">
+                {{ members|length }}
             </div>
 
-            <div>
+        </div>
 
-                <span>
-                    JUMLA YA WAUMINI
-                </span>
+    </section>
 
-                <strong>
-                    {{ jumla }}
-                </strong>
+
+    <!-- SEARCH -->
+
+    <section class="form-card">
+
+        <h2>
+            Tafuta Muumini
+        </h2>
+
+        <form
+            method="GET"
+            action="{{ url_for('members') }}"
+            class="search-form"
+        >
+
+            <div class="form-group">
+
+                <label for="search">
+                    Tafuta
+                </label>
+
+                <input
+                    type="text"
+                    id="search"
+                    name="search"
+                    value="{{ search or '' }}"
+                    placeholder="Jina, namba ya usajili, simu au makazi"
+                >
 
             </div>
 
-        </section>
+
+            <div class="form-group">
+
+                <label for="subzone">
+                    Subzone
+                </label>
+
+                <select
+                    id="subzone"
+                    name="subzone"
+                >
+
+                    <option value="">
+                        Subzones zote
+                    </option>
+
+                    {% for subzone in subzones %}
+
+                        <option
+                            value="{{ subzone.id }}"
+                            {% if subzone_filter|string == subzone.id|string %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ subzone.name }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
 
 
+            <div class="form-group">
 
-        <!-- SEARCH -->
+                <label for="jinsia">
+                    Jinsia
+                </label>
 
-        <section class="search-card">
+                <select
+                    id="jinsia"
+                    name="jinsia"
+                >
 
-            <form
-                method="GET"
-                action="/members"
-                class="search-form"
-            >
+                    <option value="">
+                        Jinsia zote
+                    </option>
 
-                <div class="search-input-wrapper">
-
-                    <span class="search-icon">
-                        🔎
-                    </span>
-
-                    <input
-                        type="text"
-                        name="search"
-                        placeholder="Tafuta kwa jina, simu, makazi..."
-                        value="{{ search }}"
+                    <option
+                        value="mwanaume"
+                        {% if jinsia_filter == "mwanaume" %}
+                            selected
+                        {% endif %}
                     >
+                        Mwanaume
+                    </option>
 
-                </div>
+                    <option
+                        value="mwanamke"
+                        {% if jinsia_filter == "mwanamke" %}
+                            selected
+                        {% endif %}
+                    >
+                        Mwanamke
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-actions">
 
                 <button
                     type="submit"
-                    class="search-button"
+                    class="btn btn-primary"
                 >
                     TAFUTA
                 </button>
 
-            </form>
-
-
-            {% if search %}
-
-                <div class="search-information">
-
-                    <p>
-                        Matokeo ya utafutaji:
-                        <strong>
-                            {{ waumini|length }}
-                        </strong>
-                    </p>
-
-                    <p>
-                        Umetafuta:
-                        <strong>
-                            "{{ search }}"
-                        </strong>
-                    </p>
-
-                    <a href="/members">
-                        Funga utafutaji
-                    </a>
-
-                </div>
-
-            {% endif %}
-
-        </section>
-
-
-
-        <!-- MEMBER TABLE -->
-
-        <section class="members-table-card">
-
-
-            <div class="table-header">
-
-                {% if search %}
-
-                    <h2>
-                        Matokeo ya Utafutaji
-                    </h2>
-
-                {% else %}
-
-                    <h2>
-                        Waumini Waliosajiliwa
-                    </h2>
-
-                {% endif %}
-
-                <span>
-                    {{ waumini|length }} wanaoonyeshwa
-                </span>
+                <a
+                    href="{{ url_for('members') }}"
+                    class="btn btn-secondary"
+                >
+                    ONDOA FILTER
+                </a>
 
             </div>
 
+        </form>
 
-            <div class="table-wrapper">
-
-                <table>
+    </section>
 
 
-                    <thead>
+    <!-- MEMBERS TABLE -->
 
-                        <tr>
+    <section class="form-card">
 
-                            <th>
-                                NA. YA USAJILI
-                            </th>
+        <div class="table-header">
 
-                            <th>
-                                JINA KAMILI
-                            </th>
+            <div>
 
-                            <th>
-                                MAKAZI
-                            </th>
+                <h2>
+                    Orodha ya Waumini
+                </h2>
 
-                            <th>
-                                JINSIA
-                            </th>
+                {% if search or jinsia_filter or subzone_filter %}
 
-                            <th>
-                                SIMU
-                            </th>
+                    <p>
 
-                            <th>
-                                PICHA
-                            </th>
+                        Matokeo ya utafutaji/filter:
+
+                        <strong>
+                            {{ members|length }}
+                        </strong>
+
+                    </p>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+        <div class="table-responsive">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            NA. YA USAJILI
+                        </th>
+
+                        <th>
+                            JINA KAMILI
+                        </th>
+
+                        <th>
+                            MAKAZI
+                        </th>
+
+                        <th>
+                            JINSIA
+                        </th>
+
+                        <th>
+                            SIMU
+                        </th>
+
+                        <th>
+                            SUBZONE
+                        </th>
+
+                        <th>
+                            PICHA
+                        </th>
+
+                        {% if can_edit_members %}
 
                             <th>
                                 EDIT
                             </th>
 
+                        {% endif %}
+
+                        {% if can_delete_members %}
+
                             <th>
                                 DELETE
                             </th>
 
-                        </tr>
+                        {% endif %}
 
-                    </thead>
+                    </tr>
 
-
-                    <tbody>
-
-
-                        {% for mtu in waumini %}
-
-                        <tr>
+                </thead>
 
 
-                            <td>
+                <tbody>
 
-                                <span class="registration-number">
-                                    {{ mtu["namba_ya_usajili"] }}
+                    {% for member in members %}
+
+                    <tr>
+
+                        <td>
+                            {{ member.namba_ya_usajili }}
+                        </td>
+
+                        <td>
+                            {{ member.jina_kamili }}
+                        </td>
+
+                        <td>
+                            {{ member.makazi }}
+                        </td>
+
+                        <td>
+                            {{ member.jinsia }}
+                        </td>
+
+                        <td>
+                            {{ member.namba_ya_sim }}
+                        </td>
+
+                        <td>
+
+                            {% if member.subzone_name %}
+
+                                {{ member.subzone_name }}
+
+                            {% else %}
+
+                                <span class="muted">
+                                    Hakuna Subzone
                                 </span>
 
-                            </td>
+                            {% endif %}
+
+                        </td>
 
 
-                            <td class="member-name">
+                        <td>
 
-                                {{ mtu["jina_kamili"] }}
+                            {% if member.picha %}
 
-                            </td>
-
-
-                            <td>
-
-                                {{ mtu["makazi"] }}
-
-                            </td>
-
-
-                            <td>
-
-                                {{ mtu["jinsia"] }}
-
-                            </td>
-
-
-                            <td>
-
-                                {{ mtu["namba_ya_sim"] }}
-
-                            </td>
-
-
-                            <td>
-
-                                {% if mtu["picha"] %}
-
-                                    <img
-                                        class="member-photo"
-                                        src="{{ url_for(
-                                            'static',
-                                            filename='uploads/' + mtu['picha']
-                                        ) }}"
-                                        alt="Picha ya {{ mtu['jina_kamili'] }}"
-                                    >
-
-                                {% else %}
-
-                                    <div class="no-photo">
-                                        —
-                                    </div>
-
-                                {% endif %}
-
-                            </td>
-
-
-                            <td>
-
-                                <a
-                                    href="/edit/{{ mtu['id'] }}"
-                                    class="edit-button"
+                                <img
+                                    src="{{ url_for(
+                                        'static',
+                                        filename='uploads/' ~ member.picha
+                                    ) }}"
+                                    alt="Picha ya {{ member.jina_kamili }}"
+                                    class="member-photo"
                                 >
-                                    EDIT
-                                </a>
 
-                            </td>
+                            {% else %}
 
+                                <span class="muted">
+                                    Hakuna picha
+                                </span>
 
-                            <td>
+                            {% endif %}
 
-                                <a
-                                    href="/delete/{{ mtu['id'] }}"
-                                    class="delete-button"
-                                >
-                                    DELETE
-                                </a>
-
-                            </td>
+                        </td>
 
 
-                        </tr>
+                        {% if can_edit_members %}
 
-                        {% endfor %}
+                        <td>
 
+                            <a
+                                href="{{ url_for(
+                                    'edit_member',
+                                    member_id=member.id
+                                ) }}"
+                                class="btn btn-small btn-primary"
+                            >
+                                EDIT
+                            </a>
 
-                    </tbody>
+                        </td>
 
-
-                </table>
-
-            </div>
-
-
-            {% if not waumini %}
-
-                <div class="empty-state">
-
-                    <div class="empty-icon">
-                        👥
-                    </div>
-
-                    <h3>
-                        Hakuna waumini waliopatikana
-                    </h3>
-
-                    <p>
-                        Hakuna taarifa inayolingana
-                        na utafutaji wako.
-                    </p>
-
-                </div>
-
-            {% endif %}
+                        {% endif %}
 
 
-        </section>
+                        {% if can_delete_members %}
 
+                        <td>
 
-    </main>
+                            <a
+                                href="{{ url_for(
+                                    'delete_member',
+                                    member_id=member.id
+                                ) }}"
+                                class="btn btn-small btn-danger"
+                            >
+                                DELETE
+                            </a>
 
+                        </td>
+
+                        {% endif %}
+
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+
+                        <td
+                            colspan="9"
+                            style="text-align: center; padding: 30px;"
+                        >
+
+                            Hakuna waumini waliopatikana.
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
 
 </body>
 
 </html>
-

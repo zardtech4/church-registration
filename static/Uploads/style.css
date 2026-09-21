@@ -356,3 +356,19 @@ body {
 
 }
 
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+    min-width: 1100px;
+    width: 100%;
+}
+
+.table-responsive th,
+.table-responsive td {
+    white-space: nowrap;
+}

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Church Settings</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+<nav class="navbar">
+
+    <div class="nav-brand">
+        {{ settings["church_name"] }}
+    </div>
+
+    <div class="nav-links">
+
+        <a href="{{ url_for('dashboard') }}">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('members') }}">
+            Waumini
+        </a>
+
+        {% if can_view_subzones %}
+        <a href="{{ url_for('subzones') }}">
+            Subzones
+        </a>
+        {% endif %}
+
+    </div>
+
+</nav>
+
+
+<main class="page-container">
+
+    <section class="form-card">
+
+        <div class="form-header">
+
+            <h1>
+                Church Settings
+            </h1>
+
+            <p>
+                Weka taarifa kuu za kanisa.
+            </p>
+
+        </div>
+
+
+        {% if error %}
+
+        <div class="form-error">
+            {{ error }}
+        </div>
+
+        {% endif %}
+
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                <div class="
+                    {% if category == 'success' %}
+                        form-success
+                    {% else %}
+                        form-error
+                    {% endif %}
+                ">
+                    {{ message }}
+                </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        {% if settings["logo"] %}
+
+        <div
+            style="
+                text-align: center;
+                margin-bottom: 25px;
+            "
+        >
+
+            <img
+                src="{{ url_for('static', filename='uploads/' + settings['logo']) }}"
+                alt="Logo ya Kanisa"
+                style="
+                    max-width: 180px;
+                    max-height: 180px;
+                    object-fit: contain;
+                "
+            >
+
+            <p>
+                Logo ya sasa
+            </p>
+
+        </div>
+
+        {% endif %}
+
+
+        <form
+            method="POST"
+            action="{{ url_for('church_settings') }}"
+            enctype="multipart/form-data"
+        >
+
+            <div class="form-group">
+
+                <label for="church_name">
+                    Jina la Kanisa
+                </label>
+
+                <input
+                    type="text"
+                    id="church_name"
+                    name="church_name"
+                    value="{{ settings['church_name'] or '' }}"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="address">
+                    Anwani
+                </label>
+
+                <textarea
+                    id="address"
+                    name="address"
+                    rows="3"
+                >{{ settings['address'] or '' }}</textarea>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="phone">
+                    Namba ya Simu
+                </label>
+
+                <input
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    value="{{ settings['phone'] or '' }}"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="email">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value="{{ settings['email'] or '' }}"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="logo">
+                    Logo ya Kanisa
+                </label>
+
+                <input
+                    type="file"
+                    id="logo"
+                    name="logo"
+                    accept=".jpg,.jpeg,.png,.webp"
+                >
+
+                <small>
+                    Aina zinazoruhusiwa: JPG, JPEG, PNG, WEBP.
+                    Maximum 5MB.
+                </small>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="primary-button"
+            >
+                HIFADHI SETTINGS
+            </button>
+
+        </form>
+
+    </section>
+
+</main>
+
+</body>
+</html>

@@ -1,37 +1,42 @@
 <!DOCTYPE html>
-
 <html lang="sw">
 
 <head>
 
- 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<title>
-    Hariri Muumini
-</title>
+    <title>
+        Hariri Muumini
+    </title>
 
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='style.css') }}"
->
- 
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 
 </head>
 
+
 <body>
 
- 
+
 <nav class="navbar">
 
     <div class="nav-brand">
-        CHURCH REGISTRATION
+
+        {% if church_settings and church_settings["church_name"] %}
+            {{ church_settings["church_name"] }}
+        {% else %}
+            CHURCH REGISTRATION
+        {% endif %}
+
     </div>
+
 
     <div class="nav-links">
 
@@ -47,12 +52,21 @@
             Waumini
         </a>
 
+        {% if can_view_subzones %}
+
+            <a href="{{ url_for('subzones') }}">
+                Subzones
+            </a>
+
+        {% endif %}
+
     </div>
 
 </nav>
 
 
 <main class="edit-container">
+
 
     <section class="edit-card">
 
@@ -81,15 +95,26 @@
             </span>
 
             <strong>
-                {{ mtu["namba_ya_usajili"] }}
+                {{ member["namba_ya_usajili"] }}
             </strong>
 
         </div>
 
 
         <p class="edit-number-note">
+
             Namba ya usajili haiwezi kubadilishwa.
+
         </p>
+
+
+        {% if error %}
+
+            <div class="form-error">
+                {{ error }}
+            </div>
+
+        {% endif %}
 
 
         <form
@@ -108,7 +133,7 @@
                     type="text"
                     id="jina_kamili"
                     name="jina_kamili"
-                    value="{{ mtu['jina_kamili'] }}"
+                    value="{{ member['jina_kamili'] }}"
                     required
                 >
 
@@ -125,7 +150,7 @@
                     type="text"
                     id="makazi"
                     name="makazi"
-                    value="{{ mtu['makazi'] }}"
+                    value="{{ member['makazi'] }}"
                     required
                 >
 
@@ -142,7 +167,7 @@
                     type="tel"
                     id="namba_ya_sim"
                     name="namba_ya_sim"
-                    value="{{ mtu['namba_ya_sim'] or '' }}"
+                    value="{{ member['namba_ya_sim'] or '' }}"
                     required
                 >
 
@@ -161,23 +186,80 @@
                     required
                 >
 
-                    <option value="Mwanaume"
-                        {% if mtu["jinsia"] == "Mwanaume" %}
+                    <option
+                        value="Mwanaume"
+
+                        {% if member["jinsia"] == "Mwanaume" %}
                             selected
                         {% endif %}
                     >
+
                         Mwanaume
+
                     </option>
 
-                    <option value="Mwanamke"
-                        {% if mtu["jinsia"] == "Mwanamke" %}
+
+                    <option
+                        value="Mwanamke"
+
+                        {% if member["jinsia"] == "Mwanamke" %}
                             selected
                         {% endif %}
                     >
+
                         Mwanamke
+
                     </option>
 
                 </select>
+
+            </div>
+
+
+            <!-- SUBZONE -->
+
+            <div class="form-group">
+
+                <label for="subzone_id">
+                    Subzone
+                </label>
+
+                <select
+                    id="subzone_id"
+                    name="subzone_id"
+                >
+
+                    <option value="">
+                        -- Hakuna Subzone --
+                    </option>
+
+
+                    {% for subzone in subzones %}
+
+                        <option
+                            value="{{ subzone['id'] }}"
+
+                            {% if member["subzone_id"] == subzone["id"] %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ subzone["name"] }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+
+                {% if not subzones %}
+
+                    <small>
+                        Hakuna subzone iliyowekwa bado.
+                    </small>
+
+                {% endif %}
 
             </div>
 
@@ -188,14 +270,15 @@
                     Picha ya Sasa
                 </label>
 
-                {% if mtu["picha"] %}
+
+                {% if member["picha"] %}
 
                     <img
                         src="{{ url_for(
                             'static',
-                            filename='uploads/' + mtu['picha']
+                            filename='uploads/' + member['picha']
                         ) }}"
-                        alt="Picha ya {{ mtu['jina_kamili'] }}"
+                        alt="Picha ya {{ member['jina_kamili'] }}"
                         class="edit-current-photo"
                     >
 
@@ -213,7 +296,9 @@
             <div class="form-group">
 
                 <label for="picha">
+
                     Badilisha Picha
+
                 </label>
 
                 <input
@@ -224,7 +309,9 @@
                 >
 
                 <small class="photo-help">
+
                     Acha tupu kama hutaki kubadilisha picha.
+
                 </small>
 
             </div>
@@ -236,14 +323,19 @@
                     type="submit"
                     class="primary-button"
                 >
+
                     HIFADHI MABADILIKO
+
                 </button>
+
 
                 <a
                     href="{{ url_for('members') }}"
                     class="cancel-button"
                 >
+
                     RUDI KWENYE ORODHA
+
                 </a>
 
             </div>
@@ -251,10 +343,12 @@
 
         </form>
 
+
     </section>
 
+
 </main>
- 
+
 
 </body>
 

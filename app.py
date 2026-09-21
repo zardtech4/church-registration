@@ -1377,6 +1377,7 @@ def register():
             "subzone_id",
             ""
         ).strip()
+        photo = request.files.get("picha")
 
         if not jina_kamili:
 
@@ -2675,13 +2676,13 @@ def edit_member(member_id):
             ""
         ).strip()
 
-        if not jina_kamili:
+        photo = request.files.get("picha")
 
+        if not jina_kamili:
             flash(
                 "Jina kamili linahitajika.",
                 "error"
             )
-
             return render_template(
                 "edit.html",
                 member=member,
@@ -2689,12 +2690,10 @@ def edit_member(member_id):
             )
 
         if not makazi:
-
             flash(
                 "Makazi yanahitajika.",
                 "error"
             )
-
             return render_template(
                 "edit.html",
                 member=member,
@@ -2702,12 +2701,10 @@ def edit_member(member_id):
             )
 
         if not jinsia:
-
             flash(
                 "Jinsia inahitajika.",
                 "error"
             )
-
             return render_template(
                 "edit.html",
                 member=member,
@@ -2715,12 +2712,10 @@ def edit_member(member_id):
             )
 
         if not namba_ya_sim:
-
             flash(
                 "Namba ya simu inahitajika.",
                 "error"
             )
-
             return render_template(
                 "edit.html",
                 member=member,
@@ -2735,12 +2730,10 @@ def edit_member(member_id):
             phone_pattern,
             namba_ya_sim
         ):
-
             flash(
                 "Namba ya simu si sahihi.",
                 "error"
             )
-
             return render_template(
                 "edit.html",
                 member=member,
@@ -2752,7 +2745,6 @@ def edit_member(member_id):
         if subzone_id:
 
             try:
-
                 selected_subzone_id = int(
                     subzone_id
                 )
@@ -2796,6 +2788,43 @@ def edit_member(member_id):
                     subzones=subzones
                 )
 
+        # Keep the current photo unless a new one is uploaded.
+        new_photo = member["picha"]
+
+        if photo and photo.filename:
+
+            if not allowed_file(photo.filename):
+
+                flash(
+                    "Aina ya picha hairuhusiwi. Tumia JPG, JPEG, PNG au WEBP.",
+                    "error"
+                )
+
+                return render_template(
+                    "edit.html",
+                    member=member,
+                    subzones=subzones
+                )
+
+            try:
+
+                new_photo = save_uploaded_image(
+                    photo
+                )
+
+            except Exception:
+
+                flash(
+                    "Imeshindikana kupakia picha.",
+                    "error"
+                )
+
+                return render_template(
+                    "edit.html",
+                    member=member,
+                    subzones=subzones
+                )
+
         db.execute(
             """
             UPDATE waumini
@@ -2804,7 +2833,8 @@ def edit_member(member_id):
                 makazi = %s,
                 jinsia = %s,
                 namba_ya_sim = %s,
-                subzone_id = %s
+                subzone_id = %s,
+                picha = %s
             WHERE id = %s
             """,
             (
@@ -2813,9 +2843,22 @@ def edit_member(member_id):
                 jinsia,
                 namba_ya_sim,
                 selected_subzone_id,
+                new_photo,
                 member_id
             )
         )
+
+        # Delete the old photo only after
+        # the database has been updated successfully.
+        if (
+            photo
+            and photo.filename
+            and member["picha"]
+            and new_photo != member["picha"]
+        ):
+            delete_uploaded_file(
+                member["picha"]
+            )
 
         log_action(
             "EDIT_MEMBER",

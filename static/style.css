@@ -8295,4 +8295,250 @@ line-height: 1.55;
     color: #64748b;
     font-size: 15px;
     margin: 9px 0 0;
+}/* =========================================================
+   FINANCE MOBILE RESPONSIVENESS + HEADING VISIBILITY
+   ========================================================= */
+
+/* Finance dashboard heading */
+.finance-dashboard-page h1,
+.finance-dashboard-header h1,
+h1.finance-dashboard-title {
+    color: #1e3a5f !important;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 0;
+}
+
+/* Finance reports heading */
+.finance-reports-page .finance-reports-header h1 {
+    color: #1e3a5f !important;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 0;
+}
+
+/* Keep finance content inside the viewport */
+.finance-dashboard-page,
+.finance-reports-page,
+.finance-transactions-page,
+.finance-import-page {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+/* Prevent cards/panels from creating unnecessary width */
+.finance-dashboard-page *,
+.finance-reports-page *,
+.finance-transactions-page *,
+.finance-import-page * {
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
+.finance-table-section {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.finance-table {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* =========================================================
+   PHONE
+   ========================================================= */
+
+@media (max-width: 650px) {
+
+    /* Page headings */
+    .finance-dashboard-header,
+    .finance-reports-header,
+    .finance-transactions-header {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 22px;
+        gap: 16px;
+    }
+
+    .finance-dashboard-header h1,
+    .finance-dashboard-page h1,
+    h1.finance-dashboard-title,
+    .finance-reports-header h1,
+    .finance-transactions-header h1 {
+        font-size: 25px !important;
+        line-height: 1.25;
+        color: #1e3a5f !important;
+        font-weight: 800;
+    }
+
+    .finance-dashboard-header p,
+    .finance-reports-header p,
+    .finance-transactions-header p {
+        font-size: 13px;
+        line-height: 1.5;
+        margin-top: 7px;
+    }
+
+    /* Report cards */
+    .finance-report-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        width: 100%;
+        max-width: 100%;
+        gap: 14px;
+    }
+
+    .finance-report-panel {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        border-radius: 12px;
+    }
+
+    .report-panel-header {
+        padding: 16px;
+    }
+
+    .report-panel-header h2 {
+        font-size: 17px;
+    }
+
+    .category-list {
+        padding: 4px 16px;
+    }
+
+    .category-row {
+        width: 100%;
+        padding: 13px 0;
+        gap: 8px;
+    }
+
+    .category-row span {
+        font-size: 13px;
+        min-width: 0;
+    }
+
+    .category-row strong {
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    /* Date filter */
+    .finance-report-filter {
+        width: 100%;
+        max-width: 100%;
+        padding: 16px;
+        margin-bottom: 20px;
+        border-radius: 12px;
+    }
+
+    .finance-report-filter form {
+        width: 100%;
+        gap: 11px;
+    }
+
+    .report-date-field {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .report-date-field input {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .finance-report-button,
+    .finance-report-reset {
+        width: 100%;
+    }
+
+    /* Export / import buttons */
+    .finance-report-actions {
+        width: 100%;
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+    }
+
+    .finance-export-button,
+    .finance-import-button-link {
+        width: 100%;
+        max-width: 100%;
+        min-height: 43px;
+    }
+
+    /* Import card */
+    .finance-import-page {
+        width: 100%;
+        max-width: 100%;
+        padding: 15px 0;
+    }
+
+    .finance-import-card {
+        width: 100%;
+        max-width: 100%;
+        padding: 18px;
+        border-radius: 12px;
+    }
+
+    /* Transaction table */
+    .finance-transactions-page .finance-table-section,
+    .finance-reports-page .finance-table-section {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        border-radius: 10px;
+    }
+
+    .finance-table {
+        min-width: 650px;
+    }
+
+    /* Keep actions from stretching the page */
+    .finance-actions {
+        flex-wrap: wrap;
+    }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 400px) {
+
+    .finance-dashboard-header h1,
+    .finance-dashboard-page h1,
+    h1.finance-dashboard-title,
+    .finance-reports-header h1,
+    .finance-transactions-header h1 {
+        font-size: 23px !important;
+    }
+
+    .finance-report-panel {
+        border-radius: 10px;
+    }
+
+    .report-panel-header {
+        padding: 14px;
+    }
+
+    .category-list {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .finance-import-card {
+        padding: 15px;
+    }
 }

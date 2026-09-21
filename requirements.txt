@@ -4,3 +4,4 @@ gunicorn
 python-dotenv
 psycopg[binary]
 psycopg-pool
+openpyxl

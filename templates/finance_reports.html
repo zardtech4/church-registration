@@ -40,6 +40,7 @@
 
         </div>
 
+
         <div class="nav-links">
 
             <a href="{{ url_for('dashboard') }}">
@@ -76,30 +77,52 @@
 
     <main class="page-container finance-reports-page">
 
+
+        <!-- HEADER -->
+
         <div class="finance-reports-header">
 
             <div>
 
-                <span class="finance-dashboard-label">
-                    USIMAMIZI WA FEDHA
-                </span>
-
                 <h1>
-                    Finance Reports
+                    Financial Reports
                 </h1>
 
                 <p>
-                    Ripoti ya mapato na matumizi ya kanisa.
+                    Angalia na chambua taarifa za fedha za kanisa.
                 </p>
 
             </div>
 
-            <a
-                href="{{ url_for('finance_dashboard') }}"
-                class="finance-back-button"
-            >
-                ← Rudi Fedha
-            </a>
+
+            <div class="finance-report-actions">
+
+
+                <!-- EXPORT EXCEL -->
+
+                <a
+                    href="{{ url_for(
+                        'export_finance_excel',
+                        start_date=start_date,
+                        end_date=end_date
+                    ) }}"
+                    class="finance-export-button"
+                >
+                    EXPORT EXCEL
+                </a>
+
+
+                <!-- IMPORT EXCEL -->
+
+                <a
+                    href="{{ url_for('import_finance_excel') }}"
+                    class="finance-import-button-link"
+                >
+                    IMPORT EXCEL
+                </a>
+
+
+            </div>
 
         </div>
 
@@ -152,6 +175,7 @@
                     Tazama Ripoti
                 </button>
 
+
                 <a
                     href="{{ url_for('finance_reports') }}"
                     class="finance-report-reset"
@@ -167,6 +191,7 @@
         <!-- SUMMARY -->
 
         <section class="finance-summary">
+
 
             <div class="finance-card">
 
@@ -206,12 +231,16 @@
 
             </div>
 
+
         </section>
 
 
         <!-- CATEGORY REPORTS -->
 
         <section class="finance-report-grid">
+
+
+            <!-- INCOME -->
 
             <div class="finance-report-panel">
 
@@ -262,6 +291,8 @@
             </div>
 
 
+            <!-- EXPENSES -->
+
             <div class="finance-report-panel">
 
                 <div class="report-panel-header">
@@ -310,12 +341,14 @@
 
             </div>
 
+
         </section>
 
 
         <!-- TRANSACTIONS -->
 
         <section class="finance-table-section">
+
 
             <div class="section-heading">
 
@@ -332,9 +365,11 @@
 
             {% if transactions %}
 
+
                 <div class="finance-table-wrapper">
 
                     <table class="finance-table">
+
 
                         <thead>
 
@@ -368,17 +403,23 @@
 
                         </thead>
 
+
                         <tbody>
+
 
                             {% for transaction in transactions %}
 
+
                                 <tr>
+
 
                                     <td>
                                         {{ transaction["transaction_date"] }}
                                     </td>
 
+
                                     <td>
+
 
                                         {% if transaction["transaction_type"] == "income" %}
 
@@ -394,13 +435,17 @@
 
                                         {% endif %}
 
+
                                     </td>
+
 
                                     <td>
                                         {{ transaction["category"] }}
                                     </td>
 
+
                                     <td>
+
 
                                         {% if transaction["member_name"] %}
 
@@ -412,9 +457,12 @@
 
                                         {% endif %}
 
+
                                     </td>
 
+
                                     <td>
+
 
                                         {% if transaction["description"] %}
 
@@ -426,50 +474,70 @@
 
                                         {% endif %}
 
+
                                     </td>
 
+
                                     <td>
-                                        TZS {{ "{:,.2f}".format(transaction["amount"]) }}
+                                        TZS
+                                        {{ "{:,.2f}".format(transaction["amount"]) }}
                                     </td>
+
 
                                 </tr>
 
+
                             {% endfor %}
 
+
                         </tbody>
+
 
                     </table>
 
                 </div>
 
+
             {% else %}
 
+
                 <div class="finance-empty">
+
 
                     <div class="home-card-icon">
                         📊
                     </div>
 
+
                     <h3>
                         Hakuna miamala
                     </h3>
+
 
                     <p>
                         Hakuna miamala inayolingana na kipindi ulichochagua.
                     </p>
 
+
                 </div>
+
 
             {% endif %}
 
+
         </section>
+
 
     </main>
 
 
+    <!-- FOOTER -->
+
     <footer class="home-footer">
 
+
         <div>
+
 
             {% if church_settings and church_settings["church_name"] %}
 
@@ -481,13 +549,17 @@
 
             {% endif %}
 
+
         </div>
+
 
         <p>
             Mfumo rasmi wa kanisa
         </p>
 
+
     </footer>
+
 
 </body>
 

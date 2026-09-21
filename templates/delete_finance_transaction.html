@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html lang="sw">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Futa Muamala
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<nav class="navbar">
+
+    <div class="nav-brand">
+
+        {% if church_settings and church_settings["church_name"] %}
+
+            {{ church_settings["church_name"] }}
+
+        {% else %}
+
+            CHURCH REGISTRATION
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="nav-links">
+
+        <a href="{{ url_for('dashboard') }}">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('members') }}">
+            Waumini
+        </a>
+
+        <a href="{{ url_for('finance_dashboard') }}">
+            Fedha
+        </a>
+
+    </div>
+
+</nav>
+
+
+<main class="finance-delete-page">
+
+
+    <section class="finance-delete-card">
+
+
+        <div class="finance-delete-header">
+
+            <span class="dashboard-label">
+                FUTA MUAMALA
+            </span>
+
+            <h1>
+                Futa Muamala?
+            </h1>
+
+            <p>
+                Una uhakika unataka kufuta muamala huu?
+            </p>
+
+        </div>
+
+
+        <div class="finance-delete-warning">
+
+            <strong>
+                Tahadhari
+            </strong>
+
+            <p>
+                Kitendo hiki hakiwezi kutenduliwa.
+            </p>
+
+        </div>
+
+
+        <div class="finance-delete-details">
+
+
+            <div class="finance-delete-row">
+
+                <span>
+                    Tarehe
+                </span>
+
+                <strong>
+                    {{ transaction["transaction_date"] }}
+                </strong>
+
+            </div>
+
+
+            <div class="finance-delete-row">
+
+                <span>
+                    Aina
+                </span>
+
+                <strong>
+
+                    {% if transaction["transaction_type"] == "income" %}
+
+                        Mapato
+
+                    {% else %}
+
+                        Matumizi
+
+                    {% endif %}
+
+                </strong>
+
+            </div>
+
+
+            <div class="finance-delete-row">
+
+                <span>
+                    Category
+                </span>
+
+                <strong>
+                    {{ transaction["category"] }}
+                </strong>
+
+            </div>
+
+
+            {% if transaction["member_name"] %}
+
+                <div class="finance-delete-row">
+
+                    <span>
+                        Muumini
+                    </span>
+
+                    <strong>
+                        {{ transaction["member_name"] }}
+                    </strong>
+
+                </div>
+
+            {% endif %}
+
+
+            <div class="finance-delete-row">
+
+                <span>
+                    Kiasi
+                </span>
+
+                <strong>
+                    TZS {{ "{:,.2f}".format(transaction["amount"]) }}
+                </strong>
+
+            </div>
+
+
+            {% if transaction["description"] %}
+
+                <div class="finance-delete-row">
+
+                    <span>
+                        Maelezo
+                    </span>
+
+                    <strong>
+                        {{ transaction["description"] }}
+                    </strong>
+
+                </div>
+
+            {% endif %}
+
+
+        </div>
+
+
+        <form
+            method="POST"
+            class="finance-delete-actions"
+        >
+
+            <button
+                type="submit"
+                class="finance-delete-button"
+            >
+                NDIYO, FUTA MUAMALA
+            </button>
+
+
+            <a
+                href="{{ url_for('finance_transactions') }}"
+                class="finance-cancel-delete"
+            >
+                GHAIRI
+            </a>
+
+        </form>
+
+
+    </section>
+
+
+</main>
+
+
+</body>
+
+</html>

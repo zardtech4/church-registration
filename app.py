@@ -15,7 +15,8 @@ from flask import (
     request,
     session,
     url_for,
-    jsonify
+    jsonify,
+    send_file
 )
 
 from dotenv import load_dotenv
@@ -28,6 +29,11 @@ from werkzeug.utils import secure_filename
 import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
+from io import BytesIO
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment
+from openpyxl import load_workbook
 
 
 # ============================================================
@@ -1200,7 +1206,17 @@ def inject_global_variables():
 
         is_superadmin = False
 
+    def has_permission(permission):
+
+        return (
+            is_superadmin
+            or permission in permissions
+        )
+
     return {
+
+        "has_permission":
+            has_permission,
 
         "current_admin": admin,
 
@@ -1304,9 +1320,34 @@ def inject_global_variables():
         "can_delete_announcements":
             is_superadmin
             or "announcements.delete"
+            in permissions,
+
+        # Finance
+        "can_view_finance":
+            is_superadmin
+            or "finance.view"
+            in permissions,
+
+        "can_create_finance":
+            is_superadmin
+            or "finance.create"
+            in permissions,
+
+        "can_edit_finance":
+            is_superadmin
+            or "finance.edit"
+            in permissions,
+
+        "can_delete_finance":
+            is_superadmin
+            or "finance.delete"
+            in permissions,
+
+        "can_view_finance_reports":
+            is_superadmin
+            or "finance.reports"
             in permissions
     }
-
 
 # ============================================================
 # PUBLIC HOMEPAGE
@@ -2431,6 +2472,663 @@ def finance_reports():
         transactions=transactions
     )
 
+@app.route("/finance/export")
+@login_required
+@permission_required("finance.reports")
+def export_finance_excel():
+
+    db = get_db()
+
+    start_date = request.args.get(
+        "start_date",
+        ""
+    ).strip()
+
+    end_date = request.args.get(
+        "end_date",
+        ""
+    ).strip()
+
+    conditions = []
+    params = []
+
+    if start_date:
+
+        conditions.append(
+            "f.transaction_date >= %s"
+        )
+
+        params.append(
+            start_date
+        )
+
+    if end_date:
+
+        conditions.append(
+            "f.transaction_date <= %s"
+        )
+
+        params.append(
+            end_date
+        )
+
+    where_clause = ""
+
+    if conditions:
+
+        where_clause = (
+            "WHERE "
+            + " AND ".join(conditions)
+        )
+
+    transactions = db.execute(
+        f"""
+        SELECT
+            f.id,
+            f.transaction_type,
+            f.category,
+            f.amount,
+            f.description,
+            f.transaction_date,
+            w.jina_kamili AS member_name,
+            w.namba_ya_usajili AS registration_number,
+            a.username AS recorded_by
+
+        FROM finance_transactions f
+
+        LEFT JOIN waumini w
+            ON f.member_id = w.id
+
+        LEFT JOIN admins a
+            ON f.recorded_by = a.id
+
+        {where_clause}
+
+        ORDER BY
+            f.transaction_date ASC,
+            f.id ASC
+        """,
+        tuple(params)
+    ).fetchall()
+
+    workbook = Workbook()
+
+    worksheet = workbook.active
+
+    worksheet.title = "Finance Transactions"
+
+    headers = [
+        "ID",
+        "Tarehe",
+        "Aina",
+        "Category",
+        "Mwanachama",
+        "Namba ya Usajili",
+        "Maelezo",
+        "Kiasi (TZS)",
+        "Aliyeingiza"
+    ]
+
+    worksheet.append(headers)
+
+    for cell in worksheet[1]:
+
+        cell.font = Font(
+            bold=True
+        )
+
+        cell.alignment = Alignment(
+            horizontal="center"
+        )
+
+    for transaction in transactions:
+
+        transaction_type = (
+            "Mapato"
+            if transaction["transaction_type"]
+            == "income"
+            else "Matumizi"
+        )
+
+        worksheet.append(
+            [
+                transaction["id"],
+                transaction["transaction_date"],
+                transaction_type,
+                transaction["category"],
+                transaction["member_name"] or "",
+                transaction["registration_number"] or "",
+                transaction["description"] or "",
+                float(transaction["amount"]),
+                transaction["recorded_by"] or ""
+            ]
+        )
+
+    for row in worksheet.iter_rows(
+        min_row=2,
+        min_col=8,
+        max_col=8
+    ):
+
+        row[0].number_format = (
+            '#,##0.00'
+        )
+
+    worksheet.freeze_panes = "A2"
+
+    worksheet.auto_filter.ref = (
+        worksheet.dimensions
+    )
+
+    column_widths = {
+        "A": 10,
+        "B": 15,
+        "C": 15,
+        "D": 25,
+        "E": 30,
+        "F": 20,
+        "G": 40,
+        "H": 18,
+        "I": 20
+    }
+
+    for column, width in column_widths.items():
+
+        worksheet.column_dimensions[
+            column
+        ].width = width
+
+    output = BytesIO()
+
+    workbook.save(output)
+
+    output.seek(0)
+
+    filename = "finance_report"
+
+    if start_date and end_date:
+
+        filename = (
+            f"finance_report_"
+            f"{start_date}_"
+            f"to_"
+            f"{end_date}"
+        )
+
+    elif start_date:
+
+        filename = (
+            f"finance_report_from_"
+            f"{start_date}"
+        )
+
+    elif end_date:
+
+        filename = (
+            f"finance_report_until_"
+            f"{end_date}"
+        )
+
+    log_action(
+        "EXPORT_FINANCE",
+        (
+            "Exported finance report"
+            f" ({start_date or 'beginning'}"
+            f" to "
+            f"{end_date or 'present'})"
+        )
+    )
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=f"{filename}.xlsx",
+        mimetype=(
+            "application/"
+            "vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
+    )
+
+
+@app.route(
+    "/finance/import",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("finance.create")
+def import_finance_excel():
+
+    db = get_db()
+
+    if request.method == "POST":
+
+        excel_file = request.files.get(
+            "excel_file"
+        )
+
+        if not excel_file:
+            flash(
+                "Tafadhali chagua Excel file.",
+                "error"
+            )
+            return redirect(
+                url_for("import_finance_excel")
+            )
+
+        if not excel_file.filename:
+            flash(
+                "Tafadhali chagua Excel file.",
+                "error"
+            )
+            return redirect(
+                url_for("import_finance_excel")
+            )
+
+        if not excel_file.filename.lower().endswith(
+            ".xlsx"
+        ):
+            flash(
+                "Tafadhali tumia Excel file ya .xlsx.",
+                "error"
+            )
+            return redirect(
+                url_for("import_finance_excel")
+            )
+
+        try:
+
+            workbook = load_workbook(
+                excel_file,
+                read_only=True,
+                data_only=True
+            )
+
+        except Exception:
+
+            flash(
+                "Excel file haiwezi kusomwa.",
+                "error"
+            )
+
+            return redirect(
+                url_for("import_finance_excel")
+            )
+
+        worksheet = workbook.active
+
+        rows = list(
+            worksheet.iter_rows(
+                values_only=True
+            )
+        )
+
+        workbook.close()
+
+        if not rows:
+
+            flash(
+                "Excel file haina data.",
+                "error"
+            )
+
+            return redirect(
+                url_for("import_finance_excel")
+            )
+
+        expected_headers = [
+            "Tarehe",
+            "Aina",
+            "Category",
+            "Namba ya Usajili",
+            "Maelezo",
+            "Kiasi (TZS)"
+        ]
+
+        headers = [
+            str(value).strip()
+            if value is not None
+            else ""
+            for value in rows[0]
+        ]
+
+        if headers != expected_headers:
+
+            flash(
+                (
+                    "Muundo wa Excel si sahihi. "
+                    "Tumia template ya Finance Export."
+                ),
+                "error"
+            )
+
+            return redirect(
+                url_for("import_finance_excel")
+            )
+
+        data_rows = rows[1:]
+
+        if not data_rows:
+
+            flash(
+                "Excel file haina transactions.",
+                "error"
+            )
+
+            return redirect(
+                url_for("import_finance_excel")
+            )
+
+        errors = []
+        valid_transactions = []
+
+        for row_number, row in enumerate(
+            data_rows,
+            start=2
+        ):
+
+            if not any(
+                value is not None
+                and str(value).strip() != ""
+                for value in row
+            ):
+                continue
+
+            row = list(row)
+
+            while len(row) < 6:
+                row.append(None)
+
+            transaction_date = row[0]
+            transaction_type = row[1]
+            category = row[2]
+            registration_number = row[3]
+            description = row[4]
+            amount = row[5]
+
+            row_errors = []
+
+            if not transaction_date:
+
+                row_errors.append(
+                    "Tarehe haipo"
+                )
+
+            if transaction_type:
+
+                transaction_type = str(
+                    transaction_type
+                ).strip().lower()
+
+                if transaction_type in (
+                    "mapato",
+                    "income"
+                ):
+
+                    transaction_type = "income"
+
+                elif transaction_type in (
+                    "matumizi",
+                    "expense",
+                    "expenses"
+                ):
+
+                    transaction_type = "expense"
+
+                else:
+
+                    row_errors.append(
+                        "Aina lazima iwe Mapato au Matumizi"
+                    )
+
+            else:
+
+                row_errors.append(
+                    "Aina haipo"
+                )
+
+            if not category:
+
+                row_errors.append(
+                    "Category haipo"
+                )
+
+            else:
+
+                category = str(
+                    category
+                ).strip()
+
+            if amount is None:
+
+                row_errors.append(
+                    "Kiasi hakipo"
+                )
+
+            else:
+
+                try:
+
+                    amount = float(
+                        amount
+                    )
+
+                    if amount <= 0:
+
+                        row_errors.append(
+                            "Kiasi lazima kiwe zaidi ya sifuri"
+                        )
+
+                except (
+                    TypeError,
+                    ValueError
+                ):
+
+                    row_errors.append(
+                        "Kiasi si sahihi"
+                    )
+
+            member_id = None
+
+            if registration_number:
+
+                registration_number = str(
+                    registration_number
+                ).strip()
+
+                member = db.execute(
+                    """
+                    SELECT
+                        id
+                    FROM waumini
+                    WHERE namba_ya_usajili = %s
+                    """,
+                    (
+                        registration_number,
+                    )
+                ).fetchone()
+
+                if not member:
+
+                    row_errors.append(
+                        (
+                            "Namba ya usajili "
+                            "haikupatikana"
+                        )
+                    )
+
+                else:
+
+                    member_id = member["id"]
+
+            else:
+
+                registration_number = None
+
+            if transaction_date:
+
+                if hasattr(
+                    transaction_date,
+                    "date"
+                ):
+
+                    transaction_date = (
+                        transaction_date.date()
+                    )
+
+                else:
+
+                    try:
+
+                        transaction_date = (
+                            datetime.strptime(
+                                str(
+                                    transaction_date
+                                ).strip(),
+                                "%Y-%m-%d"
+                            ).date()
+                        )
+
+                    except ValueError:
+
+                        row_errors.append(
+                            (
+                                "Tarehe lazima iwe "
+                                "YYYY-MM-DD"
+                            )
+                        )
+
+            if description is not None:
+
+                description = str(
+                    description
+                ).strip()
+
+            else:
+
+                description = None
+
+            if row_errors:
+
+                errors.append(
+                    {
+                        "row": row_number,
+                        "errors": row_errors
+                    }
+                )
+
+            else:
+
+                valid_transactions.append(
+                    {
+                        "transaction_date":
+                            transaction_date,
+                        "transaction_type":
+                            transaction_type,
+                        "category":
+                            category,
+                        "member_id":
+                            member_id,
+                        "description":
+                            description,
+                        "amount":
+                            amount
+                    }
+                )
+
+        if errors:
+
+            return render_template(
+                "finance_import.html",
+                errors=errors,
+                valid_count=len(
+                    valid_transactions
+                ),
+                imported=False
+            )
+
+        try:
+
+            for transaction in valid_transactions:
+
+                db.execute(
+                    """
+                    INSERT INTO finance_transactions (
+                        member_id,
+                        transaction_type,
+                        category,
+                        amount,
+                        description,
+                        transaction_date,
+                        recorded_by
+                    )
+                    VALUES (
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s
+                    )
+                    """,
+                    (
+                        transaction["member_id"],
+                        transaction["transaction_type"],
+                        transaction["category"],
+                        transaction["amount"],
+                        transaction["description"],
+                        transaction["transaction_date"],
+                        session["admin_id"]
+                    )
+                )
+
+            log_action(
+                "IMPORT_FINANCE",
+                (
+                    "Imported "
+                    f"{len(valid_transactions)} "
+                    "finance transactions from Excel"
+                )
+            )
+
+            flash(
+                (
+                    f"Transactions "
+                    f"{len(valid_transactions)} "
+                    "zimeingizwa kikamilifu."
+                ),
+                "success"
+            )
+
+            return redirect(
+                url_for("finance_transactions")
+            )
+
+        except Exception:
+
+            db.rollback()
+
+            flash(
+                (
+                    "Imeshindikana kuingiza "
+                    "transactions. Hakuna data "
+                    "iliyoingizwa."
+                ),
+                "error"
+            )
+
+            return redirect(
+                url_for("import_finance_excel")
+            )
+
+    return render_template(
+        "finance_import.html",
+        errors=[],
+        valid_count=0,
+        imported=False
+    )
+
 @app.route("/finance/transactions")
 @login_required
 @permission_required("finance.view")
@@ -2609,6 +3307,74 @@ def edit_finance_transaction(transaction_id):
         "edit_finance_transaction.html",
         transaction=transaction,
         members=members
+    )
+
+@app.route(
+    "/finance/transactions/<int:transaction_id>/delete",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("finance.delete")
+def delete_finance_transaction(transaction_id):
+
+    db = get_db()
+
+    transaction = db.execute(
+        """
+        SELECT
+            f.id,
+            f.transaction_type,
+            f.category,
+            f.amount,
+            f.description,
+            f.transaction_date,
+            w.jina_kamili AS member_name
+        FROM finance_transactions f
+
+        LEFT JOIN waumini w
+            ON f.member_id = w.id
+
+        WHERE f.id = %s
+        """,
+        (transaction_id,)
+    ).fetchone()
+
+    if not transaction:
+        abort(404)
+
+    if request.method == "POST":
+
+        db.execute(
+            """
+            DELETE FROM finance_transactions
+            WHERE id = %s
+            """,
+            (transaction_id,)
+        )
+
+        log_action(
+            "DELETE_FINANCE",
+            (
+                "Deleted finance transaction ID "
+                f"{transaction_id}: "
+                f"{transaction['transaction_type']} - "
+                f"{transaction['category']} - "
+                f"TZS {transaction['amount']:,.2f}"
+            )
+        )
+
+        flash(
+            "Muamala umefutwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for("finance_transactions")
+        )
+
+    return render_template(
+        "delete_finance_transaction.html",
+        transaction=transaction
     )
 
 

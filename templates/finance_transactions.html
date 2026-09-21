@@ -244,6 +244,8 @@
                                     </td>
                                     <td>
 
+   {% if can_delete_finance %}
+
     <a
         href="{{ url_for(
             'edit_finance_transaction',
@@ -253,6 +255,30 @@
     >
         Hariri
     </a>
+
+    <a
+        href="{{ url_for(
+            'delete_finance_transaction',
+            transaction_id=transaction['id']
+        ) }}"
+        class="finance-delete-link"
+    >
+        Futa
+    </a>
+
+{% elif can_edit_finance %}
+
+    <a
+        href="{{ url_for(
+            'edit_finance_transaction',
+            transaction_id=transaction['id']
+        ) }}"
+        class="finance-edit-link"
+    >
+        Hariri
+    </a>
+
+{% endif %}
 
 </td>
 

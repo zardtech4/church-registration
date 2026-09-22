@@ -2984,6 +2984,11 @@ def finance_transactions():
 
     db = get_db()
 
+    search = request.args.get(
+        "search",
+        ""
+    ).strip()
+
     transactions = db.execute(
         """
         SELECT
@@ -3004,17 +3009,27 @@ def finance_transactions():
         LEFT JOIN admins a
             ON f.recorded_by = a.id
 
+        WHERE
+            (
+                %s = ''
+                OR w.jina_kamili ILIKE %s
+            )
+
         ORDER BY
             f.transaction_date DESC,
             f.id DESC
-        """
+        """,
+        (
+            search,
+            f"%{search}%"
+        )
     ).fetchall()
 
     return render_template(
         "finance_transactions.html",
-        transactions=transactions
+        transactions=transactions,
+        search=search
     )
-
 @app.route(
     "/finance/transactions/<int:transaction_id>/edit",
     methods=["GET", "POST"]

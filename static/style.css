@@ -9160,3 +9160,66 @@ h1.finance-dashboard-title {
     color: #667085;
     font-size: 0.85rem;
 }
+/* ============================================================
+   MOBILE NAVIGATION FIX
+   ============================================================ */
+
+@media (max-width: 500px) {
+
+    .navbar {
+        width: 100%;
+        min-width: 0;
+        padding: 10px 12px;
+        gap: 8px;
+        box-sizing: border-box;
+    }
+
+    .nav-brand {
+        min-width: 0;
+        max-width: 150px;
+        flex: 1 1 auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 15px;
+    }
+
+    .nav-actions {
+        min-width: 0;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .nav-icon-button {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        padding: 0;
+        flex-shrink: 0;
+    }
+
+    .nav-profile {
+        min-width: 0;
+        padding-left: 0;
+        flex-shrink: 0;
+    }
+
+    .nav-profile-name {
+        display: none;
+    }
+
+    .nav-profile-link {
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+    }
+
+    .app-launcher-menu {
+        right: 0;
+        width: min(320px, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
+        box-sizing: border-box;
+    }
+}

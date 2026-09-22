@@ -9216,9 +9216,9 @@ h1.finance-dashboard-title {
         flex-shrink: 0;
     }
 
-    .app-launcher-menu {
+        .app-launcher-menu {
         right: 0;
-        width: min(320px, calc(100vw - 24px));
+        width: calc(100vw - 24px);
         max-width: calc(100vw - 24px);
         box-sizing: border-box;
     }

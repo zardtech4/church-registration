@@ -957,7 +957,6 @@ def permission_required(permission):
             admin = get_current_admin()
 
             if not admin:
-
                 flash(
                     "Tafadhali ingia kwanza.",
                     "error"
@@ -986,6 +985,60 @@ def permission_required(permission):
         return wrapped_view
 
     return decorator
+
+
+# ============================================================
+# AUDIT LOGGING
+# ============================================================
+
+def log_action(
+    action,
+    description=""
+):
+
+    admin = get_current_admin()
+
+    if not admin:
+        return
+
+    db = get_db()
+
+    ip_address = (
+        request.headers.get(
+            "X-Forwarded-For",
+            request.remote_addr
+        )
+    )
+
+    if ip_address and "," in ip_address:
+        ip_address = (
+            ip_address
+            .split(",")[0]
+            .strip()
+        )
+
+    db.execute(
+        """
+        INSERT INTO audit_logs (
+            admin_id,
+            action,
+            description,
+            ip_address
+        )
+        VALUES (
+            %s,
+            %s,
+            %s,
+            %s
+        )
+        """,
+        (
+            admin["id"],
+            action,
+            description,
+            ip_address
+        )
+    )
 
 # ============================================================
 # GLOBAL TEMPLATE VARIABLES

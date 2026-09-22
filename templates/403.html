@@ -4,7 +4,7 @@
 
 <head>
 
- 
+  
 <meta charset="UTF-8">
 
 <meta
@@ -13,23 +13,91 @@
 >
 
 <title>
-    Access Denied - Usajili wa Waumini
+  {% if church_settings and church_settings["church_name"] %} <div class="error-church-name">
+{{ church_settings["church_name"] }} </div>
+{% endif %}
+
 </title>
 
 <link
     rel="stylesheet"
     href="{{ url_for('static', filename='style.css') }}"
 >
- 
+
+<style>
+    .error-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 30px 20px;
+        box-sizing: border-box;
+        background: #f5f6fa;
+    }
+
+    .error-card {
+        width: 100%;
+        max-width: 560px;
+        padding: 45px 30px;
+        box-sizing: border-box;
+        text-align: center;
+    }
+
+    .error-icon {
+        font-size: 52px;
+        margin-bottom: 15px;
+    }
+
+    .error-code {
+        font-size: clamp(70px, 16vw, 130px);
+        font-weight: 800;
+        line-height: 1;
+        color: #1e3a5f;
+        letter-spacing: -4px;
+    }
+
+    .error-card h1 {
+        margin: 15px 0 10px;
+        font-size: 30px;
+        color: #222;
+    }
+
+    .error-card p {
+        max-width: 450px;
+        margin: 0 auto;
+        color: #666;
+        line-height: 1.7;
+    }
+
+    .error-actions {
+        margin-top: 30px;
+    }
+
+    .error-church-name {
+        margin-bottom: 20px;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #777;
+    }
+</style>
+  
 
 </head>
 
 <body>
 
- 
+  
 <main class="error-page">
 
     <section class="error-card">
+
+        {% if church_settings and church_settings["church_name"] %}
+            <div class="error-church-name">
+                {{ church_settings["church_name"] }}
+            </div>
+        {% endif %}
 
         <div class="error-icon">
             🔒
@@ -63,7 +131,7 @@
     </section>
 
 </main>
- 
+  
 
 </body>
 

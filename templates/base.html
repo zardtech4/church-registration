@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="sw">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block title %}
+            {{ church_settings.church_name if church_settings and church_settings.church_name else "Church Management System" }}
+        {% endblock %}
+    </title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+
+    <!-- =====================================================
+         GLOBAL NAVIGATION
+         ===================================================== -->
+    <nav class="navbar">
+
+        <!-- Church / System Brand -->
+        <div class="nav-brand">
+            {{ church_settings.church_name
+               if church_settings and church_settings.church_name
+               else "CHURCH MANAGEMENT SYSTEM" }}
+        </div>
+
+
+        <!-- Right-side navigation -->
+        <div class="nav-actions">
+
+            <!-- Dashboard -->
+            <a href="{{ url_for('dashboard') }}"
+               class="nav-icon-button"
+               title="Dashboard">
+                🏠
+            </a>
+
+
+            <!-- =================================================
+                 APP LAUNCHER
+                 ================================================= -->
+            <div class="app-launcher">
+
+                <button
+                    type="button"
+                    class="nav-icon-button app-launcher-button"
+                    onclick="toggleAppLauncher()"
+                    title="Programu">
+                    ⋮⋮
+                </button>
+
+
+                <div
+                    id="appLauncherMenu"
+                    class="app-launcher-menu">
+
+                    <div class="app-launcher-header">
+                        <strong>Programu</strong>
+                        <span>Mfumo wa Kanisa</span>
+                    </div>
+
+
+                    <div class="app-grid">
+
+                        {% if can_view_members %}
+                            <a href="{{ url_for('members') }}"
+                               class="app-item">
+                                <span class="app-icon">👥</span>
+                                <span>Waumini</span>
+                            </a>
+                        {% endif %}
+
+
+                        {% if can_create_members %}
+                            <a href="{{ url_for('register') }}"
+                               class="app-item">
+                                <span class="app-icon">➕</span>
+                                <span>Sajili</span>
+                            </a>
+                        {% endif %}
+
+{% if can_view_finance %}
+    <a href="{{ url_for('finance_dashboard') }}"
+       class="app-item">
+        <span class="app-icon">💰</span>
+        <span>Fedha</span>
+    </a>
+{% endif %}
+
+
+                        {% if can_view_announcements %}
+                            <a href="{{ url_for('announcements') }}"
+                               class="app-item">
+                                <span class="app-icon">📢</span>
+                                <span>Matangazo</span>
+                            </a>
+                        {% endif %}
+                        {% if can_view_groups %}
+    <a href="{{ url_for('groups') }}"
+       class="app-item">
+        <span class="app-icon">👨‍👩‍👧‍👦</span>
+        <span>Groups</span>
+    </a>
+{% endif %}
+
+
+                        {% if can_view_subzones %}
+                            <a href="{{ url_for('subzones') }}"
+                               class="app-item">
+                                <span class="app-icon">🏘️</span>
+                                <span>Zone</span>
+                            </a>
+                        {% endif %}
+
+
+                       {% if can_view_settings %}
+    <a href="{{ url_for('church_settings') }}"
+       class="app-item">
+        <span class="app-icon">⚙️</span>
+        <span>Settings</span>
+    </a>
+{% endif %}
+
+
+                        {% if can_view_admins %}
+                            <a href="{{ url_for('admins') }}"
+                               class="app-item">
+                                <span class="app-icon">🛡️</span>
+                                <span>Admins</span>
+                            </a>
+                        {% endif %}
+
+
+                        {% if can_view_audit %}
+                            <a href="{{ url_for('audit_logs') }}"
+                               class="app-item">
+                                <span class="app-icon">📋</span>
+                                <span>Audit Logs</span>
+                            </a>
+                        {% endif %}
+
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Profile / Account -->
+            <div class="nav-profile">
+
+                <span class="nav-profile-name">
+                    {{ current_admin.full_name
+                       if current_admin and current_admin.full_name
+                       else "Admin" }}
+                </span>
+
+                <a href="{{ url_for('change_password') }}"
+                   class="nav-profile-link"
+                   title="Badilisha password">
+                    👤
+                </a>
+
+            </div>
+
+
+            <!-- Logout -->
+            <a href="{{ url_for('logout') }}"
+               class="nav-icon-button"
+               title="Toka">
+                ↪
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <!-- =====================================================
+         PAGE CONTENT
+         ===================================================== -->
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+
+    <!-- =====================================================
+         APP LAUNCHER JAVASCRIPT
+         ===================================================== -->
+
+    <script>
+
+        function toggleAppLauncher() {
+
+            const menu =
+                document.getElementById("appLauncherMenu");
+
+            if (!menu) {
+                return;
+            }
+
+            menu.classList.toggle("show");
+        }
+
+
+        document.addEventListener("click", function(event) {
+
+            const launcher =
+                document.querySelector(".app-launcher");
+
+            const menu =
+                document.getElementById("appLauncherMenu");
+
+            if (!launcher || !menu) {
+                return;
+            }
+
+            if (!launcher.contains(event.target)) {
+                menu.classList.remove("show");
+            }
+
+        });
+
+    </script>
+
+
+    {% block scripts %}{% endblock %}
+
+</body>
+
+</html>

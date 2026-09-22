@@ -1,264 +1,247 @@
-<!DOCTYPE html>
-<html lang="sw">
+{% extends "base.html" %}
 
-<head>
+{% block title %}
+Subzones -
+{{ church_settings["church_name"] if church_settings else "Kanisa" }}
+{% endblock %}
 
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        Subzones
-    </title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-
-</head>
-
-
-<body>
-
-
-<nav class="navbar">
-
-    <div class="nav-brand">
-
-        {% if church_settings and church_settings["church_name"] %}
-
-            {{ church_settings["church_name"] }}
-
-        {% else %}
-
-            CHURCH MANAGEMENT
-
-        {% endif %}
-
-    </div>
-
-
-    <div class="nav-links">
-
-        <a href="{{ url_for('dashboard') }}">
-            Dashboard
-        </a>
-
-        <a href="{{ url_for('members') }}">
-            Waumini
-        </a>
-
-        {% if can_view_settings %}
-
-            <a href="{{ url_for('church_settings') }}">
-                Settings
-            </a>
-
-        {% endif %}
-
-    </div>
-
-</nav>
-
+{% block content %}
 
 <main class="page-container">
 
+  
+<!-- HEADER / CREATE -->
 
-    <section class="form-card">
+<section class="form-card">
+
+    <div class="form-header">
+
+        <h1>
+            Subzones
+        </h1>
+
+        <p>
+            Simamia subzones za kanisa.
+        </p>
+
+    </div>
 
 
-        <div class="form-header">
+    {% if error %}
 
-            <h1>
-                Subzones
-            </h1>
-
-            <p>
-                Simamia subzones za kanisa.
-            </p>
-
+        <div class="form-error">
+            {{ error }}
         </div>
 
+    {% endif %}
 
-        {% if error %}
 
-            <div class="form-error">
-                {{ error }}
+    {% if can_create_subzones %}
+
+        <form
+            method="POST"
+            action="{{ url_for('create_subzone') }}"
+        >
+
+            <div class="form-group">
+
+                <label for="name">
+                    Jina la Subzone
+                </label>
+
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Mfano: Upendo"
+                    required
+                >
+
             </div>
 
-        {% endif %}
+
+            <div class="form-group">
+
+                <label for="description">
+                    Maelezo
+                </label>
+
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="3"
+                    placeholder="Maelezo ya subzone..."
+                ></textarea>
+
+            </div>
 
 
-        {% if can_create_subzones %}
+            <button
+                type="submit"
+                class="primary-button"
+            >
+                + ONGEZA SUBZONE
+            </button>
 
-            <form
-                method="POST"
-                action="{{ url_for('create_subzone') }}"
+        </form>
+
+    {% endif %}
+
+
+</section>
+
+
+<!-- SUBZONE LIST -->
+
+<section
+    class="form-card"
+    style="margin-top: 25px;"
+>
+
+    <div class="form-header">
+
+        <h2>
+            Orodha ya Subzones
+        </h2>
+
+    </div>
+
+
+    {% if subzones %}
+
+
+        <div style="overflow-x: auto;">
+
+            <table
+                style="
+                    width: 100%;
+                    border-collapse: collapse;
+                "
             >
 
-                <div class="form-group">
+                <thead>
 
-                    <label for="name">
-                        Jina la Subzone
-                    </label>
+                    <tr>
 
-                    <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        placeholder="Mfano: Upendo"
-                        required
-                    >
-
-                </div>
+                        <th
+                            style="
+                                text-align: left;
+                                padding: 12px;
+                            "
+                        >
+                            Subzone
+                        </th>
 
 
-                <div class="form-group">
-
-                    <label for="description">
-                        Maelezo
-                    </label>
-
-                    <textarea
-                        id="description"
-                        name="description"
-                        rows="3"
-                        placeholder="Maelezo ya subzone..."
-                    ></textarea>
-
-                </div>
+                        <th
+                            style="
+                                text-align: left;
+                                padding: 12px;
+                            "
+                        >
+                            Maelezo
+                        </th>
 
 
-                <button
-                    type="submit"
-                    class="primary-button"
-                >
-
-                    + ONGEZA SUBZONE
-
-                </button>
-
-            </form>
-
-        {% endif %}
+                        <th
+                            style="
+                                text-align: center;
+                                padding: 12px;
+                            "
+                        >
+                            Waumini
+                        </th>
 
 
-    </section>
+                        <th
+                            style="
+                                text-align: center;
+                                padding: 12px;
+                            "
+                        >
+                            Status
+                        </th>
 
 
-    <section class="form-card" style="margin-top: 25px;">
+                        {% if can_edit_subzones or can_delete_subzones %}
+
+                            <th
+                                style="
+                                    text-align: center;
+                                    padding: 12px;
+                                "
+                            >
+                                Vitendo
+                            </th>
+
+                        {% endif %}
+
+                    </tr>
+
+                </thead>
 
 
-        <div class="form-header">
-
-            <h2>
-                Orodha ya Subzones
-            </h2>
-
-        </div>
+                <tbody>
 
 
-        {% if subzones %}
-
-
-            <div style="overflow-x: auto;">
-
-                <table
-                    style="
-                        width: 100%;
-                        border-collapse: collapse;
-                    "
-                >
-
-                    <thead>
+                    {% for subzone in subzones %}
 
                         <tr>
 
-                            <th
+                            <td style="padding: 12px;">
+
+                                <strong>
+                                    {{ subzone["name"] }}
+                                </strong>
+
+                            </td>
+
+
+                            <td style="padding: 12px;">
+
+                                {{ subzone["description"] or "-" }}
+
+                            </td>
+
+
+                            <td
                                 style="
-                                    text-align: left;
                                     padding: 12px;
-                                "
-                            >
-                                Subzone
-                            </th>
-
-
-                            <th
-                                style="
-                                    text-align: left;
-                                    padding: 12px;
-                                "
-                            >
-                                Maelezo
-                            </th>
-
-
-                            <th
-                                style="
                                     text-align: center;
-                                    padding: 12px;
                                 "
                             >
-                                Waumini
-                            </th>
+
+                                {{ subzone["member_count"] }}
+
+                            </td>
 
 
-                            <th
+                            <td
                                 style="
-                                    text-align: center;
                                     padding: 12px;
+                                    text-align: center;
                                 "
                             >
-                                Status
-                            </th>
+
+                                {% if subzone["active"] %}
+
+                                    <span>
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span>
+                                        Inactive
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
 
 
                             {% if can_edit_subzones or can_delete_subzones %}
 
-                                <th
-                                    style="
-                                        text-align: center;
-                                        padding: 12px;
-                                    "
-                                >
-                                    Vitendo
-                                </th>
-
-                            {% endif %}
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-
-                        {% for subzone in subzones %}
-
-                            <tr>
-
-                                <td style="padding: 12px;">
-
-                                    <strong>
-                                        {{ subzone["name"] }}
-                                    </strong>
-
-                                </td>
-
-
-                                <td style="padding: 12px;">
-
-                                    {{ subzone["description"] or "-" }}
-
-                                </td>
-
-
                                 <td
                                     style="
                                         padding: 12px;
@@ -266,182 +249,145 @@
                                     "
                                 >
 
-                                    {{ subzone["member_count"] }}
 
-                                </td>
+                                    {% if can_edit_subzones %}
 
+                                        <!-- EDIT -->
 
-                                <td
-                                    style="
-                                        padding: 12px;
-                                        text-align: center;
-                                    "
-                                >
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for(
+                                                'edit_subzone',
+                                                subzone_id=subzone['id']
+                                            ) }}"
+                                            style="margin-bottom: 8px;"
+                                        >
 
-                                    {% if subzone["active"] %}
-
-                                        <span>
-                                            Active
-                                        </span>
-
-                                    {% else %}
-
-                                        <span>
-                                            Inactive
-                                        </span>
-
-                                    {% endif %}
-
-                                </td>
-
-
-                                {% if can_edit_subzones or can_delete_subzones %}
-
-                                    <td
-                                        style="
-                                            padding: 12px;
-                                            text-align: center;
-                                        "
-                                    >
-
-
-                                        {% if can_edit_subzones %}
-
-                                            <form
-                                                method="POST"
-                                                action="{{ url_for(
-                                                    'edit_subzone',
-                                                    id=subzone['id']
-                                                ) }}"
-                                                style="margin-bottom: 8px;"
-                                            >
-
-                                                <input
-                                                    type="text"
-                                                    name="name"
-                                                    value="{{ subzone['name'] }}"
-                                                    required
-                                                    style="
-                                                        max-width: 150px;
-                                                        margin-bottom: 5px;
-                                                    "
-                                                >
-
-                                                <input
-                                                    type="text"
-                                                    name="description"
-                                                    value="{{ subzone['description'] or '' }}"
-                                                    placeholder="Maelezo"
-                                                    style="
-                                                        max-width: 150px;
-                                                        margin-bottom: 5px;
-                                                    "
-                                                >
-
-                                                <button
-                                                    type="submit"
-                                                    class="primary-button"
-                                                >
-                                                    Hifadhi
-                                                </button>
-
-                                            </form>
-
-
-                                            <form
-                                                method="POST"
-                                                action="{{ url_for(
-                                                    'toggle_subzone',
-                                                    id=subzone['id']
-                                                ) }}"
-                                            >
-
-                                                {% if subzone["active"] %}
-
-                                                    <button
-                                                        type="submit"
-                                                        class="cancel-button"
-                                                    >
-                                                        Zima
-                                                    </button>
-
-                                                {% else %}
-
-                                                    <button
-                                                        type="submit"
-                                                        class="primary-button"
-                                                    >
-                                                        Washa
-                                                    </button>
-
-                                                {% endif %}
-
-                                            </form>
-
-                                        {% endif %}
-
-
-                                        {% if can_delete_subzones %}
-
-                                            <form
-                                                method="POST"
-                                                action="{{ url_for(
-                                                    'delete_subzone',
-                                                    id=subzone['id']
-                                                ) }}"
-                                                style="margin-top: 8px;"
-                                                onsubmit="
-                                                    return confirm(
-                                                        'Una uhakika unataka kufuta subzone hii?'
-                                                    );
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                value="{{ subzone['name'] }}"
+                                                required
+                                                style="
+                                                    max-width: 150px;
+                                                    margin-bottom: 5px;
                                                 "
                                             >
+
+                                            <input
+                                                type="text"
+                                                name="description"
+                                                value="{{ subzone['description'] or '' }}"
+                                                placeholder="Maelezo"
+                                                style="
+                                                    max-width: 150px;
+                                                    margin-bottom: 5px;
+                                                "
+                                            >
+
+                                            <button
+                                                type="submit"
+                                                class="primary-button"
+                                            >
+                                                Hifadhi
+                                            </button>
+
+                                        </form>
+
+
+                                        <!-- TOGGLE STATUS -->
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for(
+                                                'toggle_subzone',
+                                                subzone_id=subzone['id']
+                                            ) }}"
+                                        >
+
+                                            {% if subzone["active"] %}
 
                                                 <button
                                                     type="submit"
                                                     class="cancel-button"
                                                 >
-
-                                                    Futa
-
+                                                    Zima
                                                 </button>
 
-                                            </form>
+                                            {% else %}
 
-                                        {% endif %}
+                                                <button
+                                                    type="submit"
+                                                    class="primary-button"
+                                                >
+                                                    Washa
+                                                </button>
 
+                                            {% endif %}
 
-                                    </td>
+                                        </form>
 
-                                {% endif %}
-
-                            </tr>
-
-                        {% endfor %}
-
-
-                    </tbody>
-
-                </table>
-
-            </div>
+                                    {% endif %}
 
 
-        {% else %}
+                                    {% if can_delete_subzones %}
 
-            <p>
-                Hakuna subzone iliyowekwa bado.
-            </p>
+                                        <!-- DELETE -->
 
-        {% endif %}
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for(
+                                                'delete_subzone',
+                                                subzone_id=subzone['id']
+                                            ) }}"
+                                            style="margin-top: 8px;"
+                                            onsubmit="
+                                                return confirm(
+                                                    'Una uhakika unataka kufuta subzone hii?'
+                                                );
+                                            "
+                                        >
+
+                                            <button
+                                                type="submit"
+                                                class="cancel-button"
+                                            >
+                                                Futa
+                                            </button>
+
+                                        </form>
+
+                                    {% endif %}
 
 
-    </section>
+                                </td>
 
+                            {% endif %}
+
+                        </tr>
+
+                    {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+    {% else %}
+
+        <p>
+            Hakuna subzone iliyowekwa bado.
+        </p>
+
+    {% endif %}
+
+
+</section>
+  
 
 </main>
 
-
-</body>
-
-</html>
+{% endblock %}

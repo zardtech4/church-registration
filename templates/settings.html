@@ -1,77 +1,44 @@
-<!DOCTYPE html>
-<html lang="sw">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends "base.html" %}
 
-    <title>Church Settings</title>
+{% block title %}
+Church Settings -
+{{ settings["church_name"] if settings else "Kanisa" }}
+{% endblock %}
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-</head>
-
-<body>
-
-<nav class="navbar">
-
-    <div class="nav-brand">
-        {{ settings["church_name"] }}
-    </div>
-
-    <div class="nav-links">
-
-        <a href="{{ url_for('dashboard') }}">
-            Dashboard
-        </a>
-
-        <a href="{{ url_for('members') }}">
-            Waumini
-        </a>
-
-        {% if can_view_subzones %}
-        <a href="{{ url_for('subzones') }}">
-            Subzones
-        </a>
-        {% endif %}
-
-    </div>
-
-</nav>
-
+{% block content %}
 
 <main class="page-container">
 
-    <section class="form-card">
+  
+<section class="form-card">
 
-        <div class="form-header">
+    <div class="form-header">
 
-            <h1>
-                Church Settings
-            </h1>
+        <h1>
+            Church Settings
+        </h1>
 
-            <p>
-                Weka taarifa kuu za kanisa.
-            </p>
+        <p>
+            Weka taarifa kuu za kanisa.
+        </p>
 
-        </div>
+    </div>
 
 
-        {% if error %}
+    {% if error %}
 
         <div class="form-error">
             {{ error }}
         </div>
 
-        {% endif %}
+    {% endif %}
 
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
 
-            {% if messages %}
+        {% if messages %}
 
-                {% for category, message in messages %}
+            {% for category, message in messages %}
 
                 <div class="
                     {% if category == 'success' %}
@@ -83,14 +50,16 @@
                     {{ message }}
                 </div>
 
-                {% endfor %}
+            {% endfor %}
 
-            {% endif %}
+        {% endif %}
 
-        {% endwith %}
+    {% endwith %}
 
 
-        {% if settings["logo"] %}
+    <!-- CURRENT LOGO -->
+
+    {% if settings["logo"] %}
 
         <div
             style="
@@ -100,7 +69,10 @@
         >
 
             <img
-                src="{{ url_for('static', filename='uploads/' + settings['logo']) }}"
+                src="{{ url_for(
+                    'static',
+                    filename='uploads/' ~ settings['logo']
+                ) }}"
                 alt="Logo ya Kanisa"
                 style="
                     max-width: 180px;
@@ -115,112 +87,128 @@
 
         </div>
 
-        {% endif %}
+    {% endif %}
 
 
-        <form
-            method="POST"
-            action="{{ url_for('church_settings') }}"
-            enctype="multipart/form-data"
-        >
+    <!-- SETTINGS FORM -->
 
-            <div class="form-group">
-
-                <label for="church_name">
-                    Jina la Kanisa
-                </label>
-
-                <input
-                    type="text"
-                    id="church_name"
-                    name="church_name"
-                    value="{{ settings['church_name'] or '' }}"
-                    required
-                >
-
-            </div>
+    <form
+        method="POST"
+        action="{{ url_for('church_settings') }}"
+        enctype="multipart/form-data"
+    >
 
 
-            <div class="form-group">
+        <!-- CHURCH NAME -->
 
-                <label for="address">
-                    Anwani
-                </label>
+        <div class="form-group">
 
-                <textarea
-                    id="address"
-                    name="address"
-                    rows="3"
-                >{{ settings['address'] or '' }}</textarea>
+            <label for="church_name">
+                Jina la Kanisa
+            </label>
 
-            </div>
-
-
-            <div class="form-group">
-
-                <label for="phone">
-                    Namba ya Simu
-                </label>
-
-                <input
-                    type="text"
-                    id="phone"
-                    name="phone"
-                    value="{{ settings['phone'] or '' }}"
-                >
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label for="email">
-                    Email
-                </label>
-
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value="{{ settings['email'] or '' }}"
-                >
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label for="logo">
-                    Logo ya Kanisa
-                </label>
-
-                <input
-                    type="file"
-                    id="logo"
-                    name="logo"
-                    accept=".jpg,.jpeg,.png,.webp"
-                >
-
-                <small>
-                    Aina zinazoruhusiwa: JPG, JPEG, PNG, WEBP.
-                    Maximum 5MB.
-                </small>
-
-            </div>
-
-
-            <button
-                type="submit"
-                class="primary-button"
+            <input
+                type="text"
+                id="church_name"
+                name="church_name"
+                value="{{ settings['church_name'] or '' }}"
+                required
             >
-                HIFADHI SETTINGS
-            </button>
 
-        </form>
+        </div>
 
-    </section>
+
+        <!-- ADDRESS -->
+
+        <div class="form-group">
+
+            <label for="address">
+                Anwani
+            </label>
+
+            <textarea
+                id="address"
+                name="address"
+                rows="3"
+            >{{ settings['address'] or '' }}</textarea>
+
+        </div>
+
+
+        <!-- PHONE -->
+
+        <div class="form-group">
+
+            <label for="phone">
+                Namba ya Simu
+            </label>
+
+            <input
+                type="text"
+                id="phone"
+                name="phone"
+                value="{{ settings['phone'] or '' }}"
+            >
+
+        </div>
+
+
+        <!-- EMAIL -->
+
+        <div class="form-group">
+
+            <label for="email">
+                Email
+            </label>
+
+            <input
+                type="email"
+                id="email"
+                name="email"
+                value="{{ settings['email'] or '' }}"
+            >
+
+        </div>
+
+
+        <!-- LOGO -->
+
+        <div class="form-group">
+
+            <label for="logo">
+                Logo ya Kanisa
+            </label>
+
+            <input
+                type="file"
+                id="logo"
+                name="logo"
+                accept=".jpg,.jpeg,.png,.webp"
+            >
+
+            <small>
+                Aina zinazoruhusiwa: JPG, JPEG, PNG, WEBP.
+                Maximum 5MB.
+            </small>
+
+        </div>
+
+
+        <!-- SAVE -->
+
+        <button
+            type="submit"
+            class="primary-button"
+        >
+            HIFADHI SETTINGS
+        </button>
+
+
+    </form>
+
+</section>
+  
 
 </main>
 
-</body>
-</html>
+{% endblock %}

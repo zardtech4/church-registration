@@ -1,94 +1,16 @@
-<!DOCTYPE html>
-<html lang="sw">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>
-        Waumini - {{ church_settings.church_name }}
-    </title>
+{% block title %}
+    Waumini - {{ church_settings.church_name }}
+{% endblock %}
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-</head>
 
-<body>
-
-<nav class="navbar">
-
-    <div class="nav-brand">
-        {{ church_settings.church_name }}
-    </div>
-
-    <div class="nav-links">
-
-        {% if can_view_dashboard %}
-            <a href="{{ url_for('dashboard') }}">
-                Dashboard
-            </a>
-        {% endif %}
-
-        {% if can_create_members %}
-            <a href="{{ url_for('register') }}">
-                Sajili
-            </a>
-        {% endif %}
-
-        {% if can_view_members %}
-            <a
-                href="{{ url_for('members') }}"
-                class="active"
-            >
-                Waumini
-            </a>
-        {% endif %}
-
-        {% if can_view_subzones %}
-            <a href="{{ url_for('subzones') }}">
-                Subzones
-            </a>
-        {% endif %}
-
-        {% if can_view_settings %}
-            <a href="{{ url_for('church_settings') }}">
-                Settings
-            </a>
-        {% endif %}
-
-        {% if can_view_admins %}
-            <a href="{{ url_for('admins') }}">
-                Admins
-            </a>
-        {% endif %}
-
-        {% if can_view_audit %}
-            <a href="{{ url_for('audit_logs') }}">
-                Audit Logs
-            </a>
-        {% endif %}
-
-        {% if current_admin %}
-            <a href="{{ url_for('change_password') }}">
-                Change Password
-            </a>
-
-            <a href="{{ url_for('logout') }}">
-                Logout
-            </a>
-        {% endif %}
-
-    </div>
-
-</nav>
-
+{% block content %}
 
 <main class="page-container">
 
     <!-- PAGE HEADER -->
-
     <section class="page-header">
 
         <div>
@@ -107,7 +29,6 @@
 
 
     <!-- MEMBER COUNT -->
-
     <section class="stats-grid">
 
         <div class="stat-card">
@@ -126,7 +47,6 @@
 
 
     <!-- SEARCH -->
-
     <section class="form-card">
 
         <h2>
@@ -179,7 +99,9 @@
                                 selected
                             {% endif %}
                         >
+
                             {{ subzone.name }}
+
                         </option>
 
                     {% endfor %}
@@ -251,7 +173,6 @@
 
 
     <!-- MEMBERS TABLE -->
-
     <section class="form-card">
 
         <div class="table-header">
@@ -265,13 +186,11 @@
                 {% if search or jinsia_filter or subzone_filter %}
 
                     <p>
-
                         Matokeo ya utafutaji/filter:
 
                         <strong>
                             {{ members|length }}
                         </strong>
-
                     </p>
 
                 {% endif %}
@@ -324,6 +243,7 @@
                             </th>
 
                         {% endif %}
+
 
                         {% if can_delete_members %}
 
@@ -452,9 +372,7 @@
                             colspan="9"
                             style="text-align: center; padding: 30px;"
                         >
-
                             Hakuna waumini waliopatikana.
-
                         </td>
 
                     </tr>
@@ -471,6 +389,4 @@
 
 </main>
 
-</body>
-
-</html>
+{% endblock %}

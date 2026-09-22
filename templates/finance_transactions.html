@@ -1,344 +1,245 @@
-<!DOCTYPE html>
-<html lang="sw">
+{% extends "base.html" %}
 
-<head>
+{% block title %}
+Miamala |
+{{ church_settings["church_name"] if church_settings else "Kanisa" }}
+{% endblock %}
 
-    <meta charset="UTF-8">
+{% block content %}
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<main class="page-container finance-transactions-page">
 
-    <title>
-        Miamala |
-        {{ church_settings["church_name"] if church_settings else "Kanisa" }}
-    </title>
+  
+<div class="finance-transactions-header">
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
+    <div>
 
-</head>
+        <span class="finance-dashboard-label">
+            USIMAMIZI WA FEDHA
+        </span>
 
-<body>
-
-    <nav class="navbar">
-
-        <div class="nav-brand">
-
-            {% if church_settings and church_settings["church_name"] %}
-
-                {{ church_settings["church_name"] }}
-
-            {% else %}
-
-                KANISA
-
-            {% endif %}
-
-        </div>
-
-        <div class="nav-links">
-
-            <a href="{{ url_for('dashboard') }}">
-                Dashboard
-            </a>
-
-            <a href="{{ url_for('members') }}">
-                Waumini
-            </a>
-
-            <a href="{{ url_for('announcements') }}">
-                Matangazo
-            </a>
-
-            <a
-                href="{{ url_for('finance_dashboard') }}"
-                class="active"
-            >
-                Fedha
-            </a>
-
-            <a href="{{ url_for('change_password') }}">
-                Badili Password
-            </a>
-
-            <a href="{{ url_for('logout') }}">
-                Logout
-            </a>
-
-        </div>
-
-    </nav>
-
-
-    <main class="page-container finance-transactions-page">
-
-        <div class="finance-transactions-header">
-
-            <div>
-
-                <span class="finance-dashboard-label">
-                    USIMAMIZI WA FEDHA
-                </span>
-
-                <h1>
-                    Miamala
-                </h1>
-
-                <p>
-                    Orodha ya mapato na matumizi yote ya kanisa.
-                </p>
-
-            </div>
-
-            <a
-                href="{{ url_for('finance_dashboard') }}"
-                class="finance-back-button"
-            >
-                ← Rudi Fedha
-            </a>
-
-        </div>
-
-
-        <section class="finance-table-section">
-
-            <div class="section-heading">
-
-                <span>
-                    TRANSACTIONS
-                </span>
-
-                <h2>
-                    Miamala Yote
-                </h2>
-
-            </div>
-
-
-            {% if transactions %}
-
-                <div class="finance-table-wrapper">
-
-                    <table class="finance-table">
-
-                        <thead>
-
-                            <tr>
-
-                                <th>
-                                    Tarehe
-                                </th>
-
-                                <th>
-                                    Aina
-                                </th>
-
-                                <th>
-                                    Category
-                                </th>
-
-                                <th>
-                                    Mwanachama
-                                </th>
-
-                                <th>
-                                    Maelezo
-                                </th>
-
-                                <th>
-                                    Kiasi
-                                </th>
-
-                               <th>
-    Aliyeingiza
-</th>
-
-<th>
-    Vitendo
-</th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            {% for transaction in transactions %}
-
-                                <tr>
-
-                                    <td>
-                                        {{ transaction["transaction_date"] }}
-                                    </td>
-
-                                    <td>
-
-                                        {% if transaction["transaction_type"] == "income" %}
-
-                                            <span class="finance-income">
-                                                MAPATO
-                                            </span>
-
-                                        {% else %}
-
-                                            <span class="finance-expense">
-                                                MATUMIZI
-                                            </span>
-
-                                        {% endif %}
-
-                                    </td>
-
-                                    <td>
-                                        {{ transaction["category"] }}
-                                    </td>
-
-                                    <td>
-
-                                        {% if transaction["member_name"] %}
-
-                                            {{ transaction["member_name"] }}
-
-                                        {% else %}
-
-                                            —
-
-                                        {% endif %}
-
-                                    </td>
-
-                                    <td>
-
-                                        {% if transaction["description"] %}
-
-                                            {{ transaction["description"] }}
-
-                                        {% else %}
-
-                                            —
-
-                                        {% endif %}
-
-                                    </td>
-
-                                    <td>
-                                        TZS {{ "{:,.2f}".format(transaction["amount"]) }}
-                                    </td>
-
-                                    <td>
-
-                                        {% if transaction["recorded_by"] %}
-
-                                            {{ transaction["recorded_by"] }}
-
-                                        {% else %}
-
-                                            —
-
-                                        {% endif %}
-
-                                    </td>
-                                    <td>
-
-   {% if can_delete_finance %}
-
-    <a
-        href="{{ url_for(
-            'edit_finance_transaction',
-            transaction_id=transaction['id']
-        ) }}"
-        class="finance-edit-link"
-    >
-        Hariri
-    </a>
-
-    <a
-        href="{{ url_for(
-            'delete_finance_transaction',
-            transaction_id=transaction['id']
-        ) }}"
-        class="finance-delete-link"
-    >
-        Futa
-    </a>
-
-{% elif can_edit_finance %}
-
-    <a
-        href="{{ url_for(
-            'edit_finance_transaction',
-            transaction_id=transaction['id']
-        ) }}"
-        class="finance-edit-link"
-    >
-        Hariri
-    </a>
-
-{% endif %}
-
-</td>
-
-                                </tr>
-
-                            {% endfor %}
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            {% else %}
-
-                <div class="finance-empty">
-
-                    <div class="home-card-icon">
-                        📋
-                    </div>
-
-                    <h3>
-                        Hakuna miamala bado
-                    </h3>
-
-                    <p>
-                        Miamala itakapoingizwa itaonekana hapa.
-                    </p>
-
-                </div>
-
-            {% endif %}
-
-        </section>
-
-    </main>
-
-
-    <footer class="home-footer">
-
-        <div>
-
-            {% if church_settings and church_settings["church_name"] %}
-
-                {{ church_settings["church_name"] }}
-
-            {% else %}
-
-                KANISA
-
-            {% endif %}
-
-        </div>
+        <h1>
+            Miamala
+        </h1>
 
         <p>
-            Mfumo rasmi wa kanisa
+            Orodha ya mapato na matumizi yote ya kanisa.
         </p>
 
-    </footer>
+    </div>
 
-</body>
+    <a
+        href="{{ url_for('finance_dashboard') }}"
+        class="finance-back-button"
+    >
+        ← Rudi Fedha
+    </a>
 
-</html>
+</div>
+
+
+<section class="finance-table-section">
+
+    <div class="section-heading">
+
+        <span>
+            TRANSACTIONS
+        </span>
+
+        <h2>
+            Miamala Yote
+        </h2>
+
+    </div>
+
+
+    {% if transactions %}
+
+        <div class="finance-table-wrapper">
+
+            <table class="finance-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Tarehe
+                        </th>
+
+                        <th>
+                            Aina
+                        </th>
+
+                        <th>
+                            Category
+                        </th>
+
+                        <th>
+                            Mwanachama
+                        </th>
+
+                        <th>
+                            Maelezo
+                        </th>
+
+                        <th>
+                            Kiasi
+                        </th>
+
+                        <th>
+                            Aliyeingiza
+                        </th>
+
+                        <th>
+                            Vitendo
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for transaction in transactions %}
+
+                        <tr>
+
+                            <td>
+                                {{ transaction["transaction_date"] }}
+                            </td>
+
+                            <td>
+
+                                {% if transaction["transaction_type"] == "income" %}
+
+                                    <span class="finance-income">
+                                        MAPATO
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="finance-expense">
+                                        MATUMIZI
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ transaction["category"] }}
+                            </td>
+
+                            <td>
+
+                                {% if transaction["member_name"] %}
+                                    {{ transaction["member_name"] }}
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if transaction["description"] %}
+                                    {{ transaction["description"] }}
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                TZS
+                                {{ "{:,.2f}".format(transaction["amount"]) }}
+                            </td>
+
+                            <td>
+
+                                {% if transaction["recorded_by"] %}
+                                    {{ transaction["recorded_by"] }}
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if can_delete_finance %}
+
+                                    <a
+                                        href="{{ url_for(
+                                            'edit_finance_transaction',
+                                            transaction_id=transaction['id']
+                                        ) }}"
+                                        class="finance-edit-link"
+                                    >
+                                        Hariri
+                                    </a>
+
+                                    <a
+                                        href="{{ url_for(
+                                            'delete_finance_transaction',
+                                            transaction_id=transaction['id']
+                                        ) }}"
+                                        class="finance-delete-link"
+                                    >
+                                        Futa
+                                    </a>
+
+                                {% elif can_edit_finance %}
+
+                                    <a
+                                        href="{{ url_for(
+                                            'edit_finance_transaction',
+                                            transaction_id=transaction['id']
+                                        ) }}"
+                                        class="finance-edit-link"
+                                    >
+                                        Hariri
+                                    </a>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="finance-empty">
+
+            <div class="home-card-icon">
+                📋
+            </div>
+
+            <h3>
+                Hakuna miamala bado
+            </h3>
+
+            <p>
+                Miamala itakapoingizwa itaonekana hapa.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</section>
+  
+
+</main>
+
+{% endblock %}

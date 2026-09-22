@@ -1,68 +1,9 @@
-<!DOCTYPE html>
 
-<html lang="sw">
+{% extends "base.html" %}
 
-<head>
+{% block title %}Create Administrator - Usajili wa Waumini{% endblock %}
 
- 
-<meta charset="UTF-8">
-
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
-
-<title>
-    Create Administrator - Usajili wa Waumini
-</title>
-
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='style.css') }}"
->
- 
-
-</head>
-
-<body>
-
- 
-<nav class="navbar">
-
-    <div class="nav-brand">
-        USAJILI WA WAUMINI
-    </div>
-
-    <div class="nav-links">
-
-        <a href="{{ url_for('dashboard') }}">
-            Dashboard
-        </a>
-
-        <a href="{{ url_for('register') }}">
-            Sajili
-        </a>
-
-        <a href="{{ url_for('members') }}">
-            Waumini
-        </a>
-
-        {% if can_view_admins %}
-
-            <a href="{{ url_for('admins') }}">
-                Admin & Security
-            </a>
-
-        {% endif %}
-
-        <a href="{{ url_for('logout') }}">
-            Toka
-        </a>
-
-    </div>
-
-</nav>
-
+{% block content %}
 
 <main class="create-admin-container">
 
@@ -200,13 +141,10 @@
                 <div class="create-admin-field">
 
                     <label for="email">
-
                         Email
-
                         <span>
                             Hiari
                         </span>
-
                     </label>
 
                     <input
@@ -250,58 +188,33 @@
 
                 <div class="create-admin-field">
 
-                    <label for="role">
+                    <label for="role_id">
                         Role
                     </label>
 
                     <select
-                        id="role"
-                        name="role"
+                        id="role_id"
+                        name="role_id"
                         required
                     >
 
-                        <option
-                            value="admin"
-                            {% if form_data and form_data.role == "admin" %}
-                                selected
-                            {% endif %}
-                        >
-                            Admin
+                        <option value="">
+                            -- Chagua Role --
                         </option>
 
 
-                        <option
-                            value="secretary"
-                            {% if form_data and form_data.role == "secretary" %}
-                                selected
-                            {% endif %}
-                        >
-                            Secretary
-                        </option>
-
-
-                        <option
-                            value="treasurer"
-                            {% if form_data and form_data.role == "treasurer" %}
-                                selected
-                            {% endif %}
-                        >
-                            Treasurer
-                        </option>
-
-
-                        {% if is_superadmin %}
+                        {% for role in roles %}
 
                             <option
-                                value="superadmin"
-                                {% if form_data and form_data.role == "superadmin" %}
+                                value="{{ role['id'] }}"
+                                {% if form_data and form_data.role_id|string == role['id']|string %}
                                     selected
                                 {% endif %}
                             >
-                                Superadmin
+                                {{ role["name"]|replace("_", " ")|title }}
                             </option>
 
-                        {% endif %}
+                        {% endfor %}
 
                     </select>
 
@@ -473,8 +386,6 @@
     </div>
 
 </main>
- 
 
-</body>
+{% endblock %}
 
-</html>

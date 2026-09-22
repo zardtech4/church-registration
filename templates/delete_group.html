@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Group{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>Delete Group</h1>
+
+        <p>
+            Confirm that you want to permanently delete this group.
+        </p>
+    </div>
+
+</div>
+
+
+<div class="card form-card">
+
+    <div class="delete-confirmation">
+
+        <h2>
+            Delete "{{ group['name'] }}"?
+        </h2>
+
+        <p>
+            This action will permanently remove this group.
+        </p>
+
+        <p>
+            Any member-to-group relationships for this group will
+            also be removed.
+        </p>
+
+
+        <div class="form-actions">
+
+            <a
+                href="{{ url_for('groups') }}"
+                class="btn"
+            >
+                Cancel
+            </a>
+
+
+            <form
+                method="POST"
+                action="{{ url_for('delete_group', group_id=group['id']) }}"
+            >
+
+                <button
+                    type="submit"
+                    class="btn btn-danger"
+                >
+                    Yes, Delete Group
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

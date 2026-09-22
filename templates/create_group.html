@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Add Group{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>Add Group</h1>
+
+        <p>
+            Create a new church group or department.
+        </p>
+    </div>
+
+</div>
+
+
+<div class="card form-card">
+
+    <form
+        method="POST"
+        action="{{ url_for('create_group') }}"
+    >
+
+        <div class="form-group">
+
+            <label for="name">
+                Group Name
+            </label>
+
+            <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="e.g. Youth, Women, Choir"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="description">
+                Description
+            </label>
+
+            <textarea
+                id="description"
+                name="description"
+                rows="4"
+                placeholder="Describe this group or department..."
+            ></textarea>
+
+        </div>
+
+
+        <div class="form-row">
+
+            <div class="form-group">
+
+                <label for="leader">
+                    Group Leader
+                </label>
+
+                <input
+                    type="text"
+                    id="leader"
+                    name="leader"
+                    placeholder="Leader's name"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="phone">
+                    Phone Number
+                </label>
+
+                <input
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    placeholder="e.g. 0712 345 678"
+                >
+
+            </div>
+
+        </div>
+
+
+        <div class="form-actions">
+
+            <a
+                href="{{ url_for('groups') }}"
+                class="btn"
+            >
+                Cancel
+            </a>
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                Create Group
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

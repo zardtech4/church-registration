@@ -1,110 +1,15 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html lang="sw">
+{% block title %}
+Matangazo -
+{{ church_settings["church_name"] if church_settings else "Kanisa" }}
+{% endblock %}
 
-<head>
-
-<meta charset="UTF-8">
-
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
-
-<title>
-    Matangazo - {{ church_settings.church_name }}
-</title>
-
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='style.css') }}"
->
-
-
-</head>
-
-<body>
-
-<nav class="navbar">
-
-
-<div class="nav-brand">
-    {{ church_settings.church_name }}
-</div>
-
-<div class="nav-links">
-
-    {% if can_view_dashboard %}
-        <a href="{{ url_for('dashboard') }}">
-            Dashboard
-        </a>
-    {% endif %}
-
-    {% if can_create_members %}
-        <a href="{{ url_for('register') }}">
-            Sajili
-        </a>
-    {% endif %}
-
-    {% if can_view_members %}
-        <a href="{{ url_for('members') }}">
-            Waumini
-        </a>
-    {% endif %}
-
-    {% if can_view_subzones %}
-        <a href="{{ url_for('subzones') }}">
-            Subzones
-        </a>
-    {% endif %}
-
-    {% if can_view_announcements %}
-        <a
-            href="{{ url_for('announcements') }}"
-            class="active"
-        >
-            Matangazo
-        </a>
-    {% endif %}
-
-    {% if can_view_settings %}
-        <a href="{{ url_for('church_settings') }}">
-            Settings
-        </a>
-    {% endif %}
-
-    {% if can_view_admins %}
-        <a href="{{ url_for('admins') }}">
-            Admins
-        </a>
-    {% endif %}
-
-    {% if can_view_audit %}
-        <a href="{{ url_for('audit_logs') }}">
-            Audit Logs
-        </a>
-    {% endif %}
-
-    {% if current_admin %}
-
-        <a href="{{ url_for('change_password') }}">
-            Change Password
-        </a>
-
-        <a href="{{ url_for('logout') }}">
-            Logout
-        </a>
-
-    {% endif %}
-
-</div>
-
-
-</nav>
+{% block content %}
 
 <main class="announcements-container">
 
-
+  
 <!-- HEADER -->
 
 <section class="announcements-header">
@@ -266,17 +171,21 @@
 
                     <!-- IMAGE -->
 
-                   {% if announcement["image"] %}
-    <div class="announcement-public-image">
-        <img
-            src="{{ url_for(
-                'static',
-                filename='Uploads/' + announcement['image']
-            ) }}"
-            alt="{{ announcement['title'] }}"
-        >
-    </div>
-{% endif %}
+                    {% if announcement["image"] %}
+
+                        <div class="announcement-public-image">
+
+                            <img
+                                src="{{ url_for(
+                                    'static',
+                                    filename='uploads/' ~ announcement['image']
+                                ) }}"
+                                alt="{{ announcement['title'] }}"
+                            >
+
+                        </div>
+
+                    {% endif %}
 
 
                     <!-- TOP -->
@@ -472,10 +381,8 @@
 
 
 </section>
-
+  
 
 </main>
 
-</body>
-
-</html>
+{% endblock %}

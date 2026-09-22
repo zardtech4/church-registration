@@ -1,154 +1,135 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html lang="sw">
+{% block title %}
+Import Finance |
+{{ church_settings["church_name"] if church_settings else "Kanisa" }}
+{% endblock %}
 
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        Import Finance
-    </title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-
-</head>
-
-<body>
-
+{% block content %}
 
 <main class="finance-import-page">
 
-    <section class="finance-import-card">
+  
+<section class="finance-import-card">
 
-        <div class="finance-import-header">
+    <div class="finance-import-header">
 
-            <span>
-                FINANCE
-            </span>
+        <span>
+            FINANCE
+        </span>
 
-            <h1>
-                Import Excel
-            </h1>
+        <h1>
+            Import Excel
+        </h1>
+
+        <p>
+            Ingiza transactions kutoka Excel.
+        </p>
+
+    </div>
+
+
+    <div class="finance-import-info">
+
+        <strong>
+            Muhimu
+        </strong>
+
+        <p>
+            Tumia muundo wa Excel uliotolewa
+            na mfumo wa Finance Export.
+        </p>
+
+        <p>
+            Mfumo utakagua rows zote kabla
+            ya kuingiza data.
+        </p>
+
+    </div>
+
+
+    {% if errors %}
+
+        <div class="finance-import-errors">
+
+            <h2>
+                Kuna makosa kwenye Excel
+            </h2>
 
             <p>
-                Ingiza transactions kutoka Excel.
+                Hakuna transaction yoyote
+                iliyoingizwa.
             </p>
+
+
+            {% for error in errors %}
+
+                <div class="finance-import-error">
+
+                    <strong>
+                        Row {{ error["row"] }}
+                    </strong>
+
+                    <ul>
+
+                        {% for message in error["errors"] %}
+
+                            <li>
+                                {{ message }}
+                            </li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                </div>
+
+            {% endfor %}
 
         </div>
 
-
-        <div class="finance-import-info">
-
-            <strong>
-                Muhimu
-            </strong>
-
-            <p>
-                Tumia muundo wa Excel uliotolewa
-                na mfumo wa Finance Export.
-            </p>
-
-            <p>
-                Mfumo utakagua rows zote kabla
-                ya kuingiza data.
-            </p>
-
-        </div>
+    {% endif %}
 
 
-        {% if errors %}
+    <form
+        method="POST"
+        enctype="multipart/form-data"
+        class="finance-import-form"
+    >
 
-            <div class="finance-import-errors">
+        <label for="excel_file">
+            Excel File
+        </label>
 
-                <h2>
-                    Kuna makosa kwenye Excel
-                </h2>
-
-                <p>
-                    Hakuna transaction yoyote
-                    iliyoingizwa.
-                </p>
-
-
-                {% for error in errors %}
-
-                    <div class="finance-import-error">
-
-                        <strong>
-                            Row {{ error["row"] }}
-                        </strong>
-
-                        <ul>
-
-                            {% for message in error["errors"] %}
-
-                                <li>
-                                    {{ message }}
-                                </li>
-
-                            {% endfor %}
-
-                        </ul>
-
-                    </div>
-
-                {% endfor %}
-
-            </div>
-
-        {% endif %}
-
-
-        <form
-            method="POST"
-            enctype="multipart/form-data"
-            class="finance-import-form"
+        <input
+            type="file"
+            id="excel_file"
+            name="excel_file"
+            accept=".xlsx"
+            required
         >
 
-            <label for="excel_file">
-                Excel File
-            </label>
 
-            <input
-                type="file"
-                id="excel_file"
-                name="excel_file"
-                accept=".xlsx"
-                required
-            >
-
-
-            <button
-                type="submit"
-                class="finance-import-button"
-            >
-                IMPORT EXCEL
-            </button>
-
-        </form>
-
-
-        <a
-            href="{{ url_for('finance_reports') }}"
-            class="finance-import-cancel"
+        <button
+            type="submit"
+            class="finance-import-button"
         >
-            Rudi kwenye Reports
-        </a>
+            IMPORT EXCEL
+        </button>
 
-    </section>
+    </form>
+
+
+    <a
+        href="{{ url_for('finance_reports') }}"
+        class="finance-import-cancel"
+    >
+        Rudi kwenye Reports
+    </a>
+
+</section>
+  
 
 </main>
 
-
-</body>
-
-</html>
+{% endblock %}

@@ -1,344 +1,135 @@
-
 <!DOCTYPE html>
+
 <html lang="sw">
 
 <head>
 
-    <meta charset="UTF-8">
+  
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <title>
-        {% if church_settings and church_settings["church_name"] %}
-            {{ church_settings["church_name"] }}
-        {% else %}
-            Kanisa
-        {% endif %}
-    </title>
+<title>
+    {% if church_settings and church_settings["church_name"] %}
+        {{ church_settings["church_name"] }}
+    {% else %}
+        Kanisa
+    {% endif %}
+</title>
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+  
 
 </head>
 
 <body>
 
-    <!-- =========================
-         NAVIGATION
-    ========================== -->
+  
+<!-- =========================
+     NAVIGATION
+========================== -->
 
-    <nav class="navbar">
+<nav class="navbar">
 
-        <div class="nav-brand">
+    <div class="nav-brand">
 
-            {% if church_settings and church_settings["church_name"] %}
-                {{ church_settings["church_name"] }}
-            {% else %}
-                KANISA
+        {% if church_settings and church_settings["church_name"] %}
+
+            {{ church_settings["church_name"] }}
+
+        {% else %}
+
+            KANISA
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="nav-links">
+
+        <a
+            href="{{ url_for('home') }}"
+            class="active"
+        >
+            Mwanzo
+        </a>
+
+
+        <a href="{{ url_for('register') }}">
+            Sajili
+        </a>
+
+
+        <a href="{{ url_for('login') }}">
+            🔐 Admin Login
+        </a>
+
+    </div>
+
+</nav>
+
+
+<!-- =========================
+     HERO
+========================== -->
+
+<main class="home-page">
+
+
+    <section class="hero-section">
+
+        <div class="hero-content">
+
+
+            {% if church_settings and church_settings["logo"] %}
+
+                <img
+                    src="{{ url_for(
+                        'static',
+                        filename='uploads/' ~ church_settings['logo']
+                    ) }}"
+                    alt="Logo ya Kanisa"
+                    class="church-logo"
+                >
+
             {% endif %}
 
-        </div>
 
-        <div class="nav-links">
-
-            <a
-                href="{{ url_for('home') }}"
-                class="active"
-            >
-                Mwanzo
-            </a>
-
-            <a href="{{ url_for('register') }}">
-                Sajili
-            </a>
-
-            <a href="{{ url_for('login') }}">
-                🔐 Admin Login
-            </a>
-
-        </div>
-
-    </nav>
+            <span class="hero-label">
+                KARIBU
+            </span>
 
 
-    <!-- =========================
-         HERO
-    ========================== -->
+            <h1>
 
-    <main class="home-page">
+                {% if church_settings and church_settings["church_name"] %}
 
-        <section class="hero-section">
-
-            <div class="hero-content">
-
-                {% if church_settings and church_settings["logo"] %}
-
-                    <img
-                        src="{{ url_for(
-                            'static',
-                            filename='Uploads/' + church_settings['logo']
-                        ) }}"
-                        alt="Logo ya Kanisa"
-                        class="church-logo"
-                    >
-
-                {% endif %}
-
-                <span class="hero-label">
-                    KARIBU
-                </span>
-
-                <h1>
-
-                    {% if church_settings and church_settings["church_name"] %}
-
-                        {{ church_settings["church_name"] }}
-
-                    {% else %}
-
-                        KANISA
-
-                    {% endif %}
-
-                </h1>
-
-                <p>
-                    Karibu kwenye mfumo rasmi wa kanisa.
-                    Pata taarifa, matukio na huduma za kanisa
-                    kwa urahisi.
-                </p>
-
-                <div class="hero-actions">
-
-                    <a
-                        href="{{ url_for('register') }}"
-                        class="primary-button"
-                    >
-                        SAJILI MUUMINI
-                    </a>
-
-                    <a
-                        href="#matangazo"
-                        class="secondary-button"
-                    >
-                        JIFAHAMISHE
-                    </a>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =========================
-             CHURCH INFORMATION
-        ========================== -->
-
-        <section
-            class="home-section"
-            id="matangazo"
-        >
-
-            <div class="section-heading">
-
-                <span>
-                    HABARI ZA KANISA
-                </span>
-
-                <h2>
-                    Taarifa na Matangazo
-                </h2>
-
-                <p>
-                    Endelea kufuatilia taarifa muhimu
-                    kutoka kanisani.
-                </p>
-
-            </div>
-
-
-            <!-- =========================
-                 ANNOUNCEMENTS
-            ========================== -->
-
-            <div class="home-announcements">
-
-                {% if announcements %}
-
-                    {% for announcement in announcements %}
-
-                        <article class="announcement-public-card">
-
-                            {% if announcement["image"] %}
-
-                                <div class="announcement-public-image">
-
-                                    <img
-                                        src="{{ url_for(
-                                            'static',
-                                            filename='Uploads/' + announcement['image']
-                                        ) }}"
-                                        alt="{{ announcement['title'] }}"
-                                    >
-
-                                </div>
-
-                            {% endif %}
-
-
-                            <div class="announcement-public-content">
-
-                                <div class="announcement-public-header">
-
-                                    <span class="announcement-public-label">
-                                        📢 TANGAZO
-                                    </span>
-
-                                    {% if announcement["created_at"] %}
-
-                                        <small>
-                                            {{ announcement["created_at"].strftime("%d/%m/%Y") }}
-                                        </small>
-
-                                    {% endif %}
-
-                                </div>
-
-
-                                <h3>
-                                    {{ announcement["title"] }}
-                                </h3>
-
-
-                                <p>
-                                    {{ announcement["content"] }}
-                                </p>
-
-                            </div>
-
-                        </article>
-
-                    {% endfor %}
+                    {{ church_settings["church_name"] }}
 
                 {% else %}
 
-                    <div class="announcement-public-empty">
-
-                        <div class="home-card-icon">
-                            📢
-                        </div>
-
-                        <h3>
-                            Hakuna matangazo mapya
-                        </h3>
-
-                        <p>
-                            Hakuna matangazo mapya kwa sasa.
-                        </p>
-
-                    </div>
+                    KANISA
 
                 {% endif %}
 
-            </div>
+            </h1>
 
 
-            <!-- =========================
-                 UPDATES / EVENTS
-            ========================== -->
-
-            <div class="home-cards">
-
-                <div class="home-card">
-
-                    <div class="home-card-icon">
-                        📰
-                    </div>
-
-                    <h3>
-                        Taarifa na Updates
-                    </h3>
-
-                    <p>
-                        Taarifa muhimu kuhusu shughuli
-                        na maendeleo ya kanisa zitaonekana hapa.
-                    </p>
-
-                </div>
+            <p>
+                Karibu kwenye mfumo rasmi wa kanisa.
+                Pata taarifa, matukio na huduma za kanisa
+                kwa urahisi.
+            </p>
 
 
-                <div class="home-card">
-
-                    <div class="home-card-icon">
-                        📅
-                    </div>
-
-                    <h3>
-                        Matukio
-                    </h3>
-
-                    <p>
-                        Matukio yajayo ya kanisa,
-                        mikutano na shughuli mbalimbali
-                        vitaonekana hapa.
-                    </p>
-
-                </div>
-
-
-                <div class="home-card">
-
-                    <div class="home-card-icon">
-                        🙏
-                    </div>
-
-                    <h3>
-                        Huduma za Kanisa
-                    </h3>
-
-                    <p>
-                        Pata taarifa kuhusu huduma
-                        na shughuli mbalimbali za kanisa.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =========================
-             REGISTRATION
-        ========================== -->
-
-        <section class="registration-section">
-
-            <div class="registration-content">
-
-                <div>
-
-                    <span class="section-label">
-                        USAJILI WA WAUMINI
-                    </span>
-
-                    <h2>
-                        Je, bado hujasajiliwa?
-                    </h2>
-
-                    <p>
-                        Anza usajili wako wa uanachama
-                        kwa kujaza taarifa zako kwenye
-                        mfumo wa kanisa.
-                    </p>
-
-                </div>
+            <div class="hero-actions">
 
                 <a
                     href="{{ url_for('register') }}"
@@ -347,152 +138,406 @@
                     SAJILI MUUMINI
                 </a>
 
+
+                <a
+                    href="#matangazo"
+                    class="secondary-button"
+                >
+                    JIFAHAMISHE
+                </a>
+
             </div>
 
-        </section>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         CHURCH INFORMATION
+    ========================== -->
+
+    <section
+        class="home-section"
+        id="matangazo"
+    >
+
+
+        <div class="section-heading">
+
+            <span>
+                HABARI ZA KANISA
+            </span>
+
+            <h2>
+                Taarifa na Matangazo
+            </h2>
+
+            <p>
+                Endelea kufuatilia taarifa muhimu
+                kutoka kanisani.
+            </p>
+
+        </div>
 
 
         <!-- =========================
-             CONTACT
+             ANNOUNCEMENTS
         ========================== -->
 
-        <section class="home-section">
+        <div class="home-announcements">
 
-            <div class="section-heading">
 
-                <span>
-                    MAWASILIANO
-                </span>
+            {% if announcements %}
 
-                <h2>
-                    Wasiliana Nasi
-                </h2>
+
+                {% for announcement in announcements %}
+
+
+                    <article class="announcement-public-card">
+
+
+                        {% if announcement["image"] %}
+
+                            <div class="announcement-public-image">
+
+                                <img
+                                    src="{{ url_for(
+                                        'static',
+                                        filename='uploads/' ~ announcement['image']
+                                    ) }}"
+                                    alt="{{ announcement['title'] }}"
+                                >
+
+                            </div>
+
+                        {% endif %}
+
+
+                        <div class="announcement-public-content">
+
+
+                            <div class="announcement-public-header">
+
+                                <span class="announcement-public-label">
+                                    📢 TANGAZO
+                                </span>
+
+
+                                {% if announcement["created_at"] %}
+
+                                    <small>
+                                        {{ announcement["created_at"].strftime("%d/%m/%Y") }}
+                                    </small>
+
+                                {% endif %}
+
+                            </div>
+
+
+                            <h3>
+                                {{ announcement["title"] }}
+                            </h3>
+
+
+                            <p>
+                                {{ announcement["content"] }}
+                            </p>
+
+
+                        </div>
+
+
+                    </article>
+
+
+                {% endfor %}
+
+
+            {% else %}
+
+
+                <div class="announcement-public-empty">
+
+                    <div class="home-card-icon">
+                        📢
+                    </div>
+
+                    <h3>
+                        Hakuna matangazo mapya
+                    </h3>
+
+                    <p>
+                        Hakuna matangazo mapya kwa sasa.
+                    </p>
+
+                </div>
+
+
+            {% endif %}
+
+
+        </div>
+
+
+        <!-- =========================
+             UPDATES / EVENTS
+        ========================== -->
+
+        <div class="home-cards">
+
+
+            <div class="home-card">
+
+                <div class="home-card-icon">
+                    📰
+                </div>
+
+                <h3>
+                    Taarifa na Updates
+                </h3>
 
                 <p>
-                    Kwa mawasiliano zaidi,
-                    tumia taarifa zifuatazo.
+                    Taarifa muhimu kuhusu shughuli
+                    na maendeleo ya kanisa zitaonekana hapa.
                 </p>
 
             </div>
 
 
-            <div class="contact-grid">
+            <div class="home-card">
 
+                <div class="home-card-icon">
+                    📅
+                </div>
 
-                {% if church_settings and church_settings["address"] %}
+                <h3>
+                    Matukio
+                </h3>
 
-                    <div class="contact-card">
-
-                        <div class="home-card-icon">
-                            📍
-                        </div>
-
-                        <h3>
-                            Anwani
-                        </h3>
-
-                        <p>
-                            {{ church_settings["address"] }}
-                        </p>
-
-                    </div>
-
-                {% endif %}
-
-
-                {% if church_settings and church_settings["phone"] %}
-
-                    <div class="contact-card">
-
-                        <div class="home-card-icon">
-                            📞
-                        </div>
-
-                        <h3>
-                            Simu
-                        </h3>
-
-                        <p>
-                            {{ church_settings["phone"] }}
-                        </p>
-
-                    </div>
-
-                {% endif %}
-
-
-                {% if church_settings and church_settings["email"] %}
-
-                    <div class="contact-card">
-
-                        <div class="home-card-icon">
-                            ✉️
-                        </div>
-
-                        <h3>
-                            Email
-                        </h3>
-
-                        <p>
-                            {{ church_settings["email"] }}
-                        </p>
-
-                    </div>
-
-                {% endif %}
-
+                <p>
+                    Matukio yajayo ya kanisa,
+                    mikutano na shughuli mbalimbali
+                    vitaonekana hapa.
+                </p>
 
             </div>
 
-        </section>
 
-    </main>
+            <div class="home-card">
+
+                <div class="home-card-icon">
+                    🙏
+                </div>
+
+                <h3>
+                    Huduma za Kanisa
+                </h3>
+
+                <p>
+                    Pata taarifa kuhusu huduma
+                    na shughuli mbalimbali za kanisa.
+                </p>
+
+            </div>
+
+
+        </div>
+
+
+    </section>
 
 
     <!-- =========================
-         FOOTER
+         REGISTRATION
     ========================== -->
 
-    <footer class="home-footer">
+    <section class="registration-section">
 
-        <div>
 
-            {% if church_settings and church_settings["church_name"] %}
+        <div class="registration-content">
 
-                {{ church_settings["church_name"] }}
 
-            {% else %}
+            <div>
 
-                KANISA
+                <span class="section-label">
+                    USAJILI WA WAUMINI
+                </span>
+
+                <h2>
+                    Je, bado hujasajiliwa?
+                </h2>
+
+                <p>
+                    Anza usajili wako wa uanachama
+                    kwa kujaza taarifa zako kwenye
+                    mfumo wa kanisa.
+                </p>
+
+            </div>
+
+
+            <a
+                href="{{ url_for('register') }}"
+                class="primary-button"
+            >
+                SAJILI MUUMINI
+            </a>
+
+
+        </div>
+
+
+    </section>
+
+
+    <!-- =========================
+         CONTACT
+    ========================== -->
+
+    <section class="home-section">
+
+
+        <div class="section-heading">
+
+            <span>
+                MAWASILIANO
+            </span>
+
+            <h2>
+                Wasiliana Nasi
+            </h2>
+
+            <p>
+                Kwa mawasiliano zaidi,
+                tumia taarifa zifuatazo.
+            </p>
+
+        </div>
+
+
+        <div class="contact-grid">
+
+
+            {% if church_settings and church_settings["address"] %}
+
+                <div class="contact-card">
+
+                    <div class="home-card-icon">
+                        📍
+                    </div>
+
+                    <h3>
+                        Anwani
+                    </h3>
+
+                    <p>
+                        {{ church_settings["address"] }}
+                    </p>
+
+                </div>
 
             {% endif %}
 
+
+            {% if church_settings and church_settings["phone"] %}
+
+                <div class="contact-card">
+
+                    <div class="home-card-icon">
+                        📞
+                    </div>
+
+                    <h3>
+                        Simu
+                    </h3>
+
+                    <p>
+                        {{ church_settings["phone"] }}
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+
+            {% if church_settings and church_settings["email"] %}
+
+                <div class="contact-card">
+
+                    <div class="home-card-icon">
+                        ✉️
+                    </div>
+
+                    <h3>
+                        Email
+                    </h3>
+
+                    <p>
+                        {{ church_settings["email"] }}
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+
         </div>
 
 
-        <p>
-            Mfumo rasmi wa kanisa
-        </p>
+    </section>
 
 
-        <div class="footer-links">
+</main>
 
-            <a href="{{ url_for('home') }}">
-                Mwanzo
-            </a>
 
-            <a href="{{ url_for('register') }}">
-                Sajili
-            </a>
+<!-- =========================
+     FOOTER
+========================== -->
 
-            <a href="{{ url_for('login') }}">
-                Admin Login
-            </a>
+<footer class="home-footer">
 
-        </div>
 
-    </footer>
+    <div>
 
+        {% if church_settings and church_settings["church_name"] %}
+
+            {{ church_settings["church_name"] }}
+
+        {% else %}
+
+            KANISA
+
+        {% endif %}
+
+    </div>
+
+
+    <p>
+        Mfumo rasmi wa kanisa
+    </p>
+
+
+    <div class="footer-links">
+
+        <a href="{{ url_for('home') }}">
+            Mwanzo
+        </a>
+
+        <a href="{{ url_for('register') }}">
+            Sajili
+        </a>
+
+        <a href="{{ url_for('login') }}">
+            Admin Login
+        </a>
+
+    </div>
+
+
+</footer>
+  
 
 </body>
 

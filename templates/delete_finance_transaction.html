@@ -1,234 +1,172 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html lang="sw">
+{% block title %}
+Futa Muamala |
+{{ church_settings["church_name"] if church_settings else "Kanisa" }}
+{% endblock %}
 
-<head>
+{% block content %}
 
-    <meta charset="UTF-8">
+<main class="finance-delete-page">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+  
+<section class="finance-delete-card">
 
-    <title>
-        Futa Muamala
-    </title>
+    <div class="finance-delete-header">
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
+        <span class="dashboard-label">
+            FUTA MUAMALA
+        </span>
 
-</head>
+        <h1>
+            Futa Muamala?
+        </h1>
+
+        <p>
+            Una uhakika unataka kufuta muamala huu?
+        </p>
+
+    </div>
 
 
-<body>
+    <div class="finance-delete-warning">
+
+        <strong>
+            Tahadhari
+        </strong>
+
+        <p>
+            Kitendo hiki hakiwezi kutenduliwa.
+        </p>
+
+    </div>
 
 
-<nav class="navbar">
+    <div class="finance-delete-details">
 
-    <div class="nav-brand">
+        <div class="finance-delete-row">
 
-        {% if church_settings and church_settings["church_name"] %}
+            <span>
+                Tarehe
+            </span>
 
-            {{ church_settings["church_name"] }}
+            <strong>
+                {{ transaction["transaction_date"] }}
+            </strong>
 
-        {% else %}
+        </div>
 
-            CHURCH REGISTRATION
+
+        <div class="finance-delete-row">
+
+            <span>
+                Aina
+            </span>
+
+            <strong>
+
+                {% if transaction["transaction_type"] == "income" %}
+
+                    Mapato
+
+                {% else %}
+
+                    Matumizi
+
+                {% endif %}
+
+            </strong>
+
+        </div>
+
+
+        <div class="finance-delete-row">
+
+            <span>
+                Category
+            </span>
+
+            <strong>
+                {{ transaction["category"] }}
+            </strong>
+
+        </div>
+
+
+        {% if transaction["member_name"] %}
+
+            <div class="finance-delete-row">
+
+                <span>
+                    Muumini
+                </span>
+
+                <strong>
+                    {{ transaction["member_name"] }}
+                </strong>
+
+            </div>
+
+        {% endif %}
+
+
+        <div class="finance-delete-row">
+
+            <span>
+                Kiasi
+            </span>
+
+            <strong>
+                TZS {{ "{:,.2f}".format(transaction["amount"]) }}
+            </strong>
+
+        </div>
+
+
+        {% if transaction["description"] %}
+
+            <div class="finance-delete-row">
+
+                <span>
+                    Maelezo
+                </span>
+
+                <strong>
+                    {{ transaction["description"] }}
+                </strong>
+
+            </div>
 
         {% endif %}
 
     </div>
 
 
-    <div class="nav-links">
-
-        <a href="{{ url_for('dashboard') }}">
-            Dashboard
-        </a>
-
-        <a href="{{ url_for('members') }}">
-            Waumini
-        </a>
-
-        <a href="{{ url_for('finance_dashboard') }}">
-            Fedha
-        </a>
-
-    </div>
-
-</nav>
-
-
-<main class="finance-delete-page">
-
-
-    <section class="finance-delete-card">
-
-
-        <div class="finance-delete-header">
-
-            <span class="dashboard-label">
-                FUTA MUAMALA
-            </span>
-
-            <h1>
-                Futa Muamala?
-            </h1>
-
-            <p>
-                Una uhakika unataka kufuta muamala huu?
-            </p>
-
-        </div>
-
-
-        <div class="finance-delete-warning">
-
-            <strong>
-                Tahadhari
-            </strong>
-
-            <p>
-                Kitendo hiki hakiwezi kutenduliwa.
-            </p>
-
-        </div>
-
-
-        <div class="finance-delete-details">
-
-
-            <div class="finance-delete-row">
-
-                <span>
-                    Tarehe
-                </span>
-
-                <strong>
-                    {{ transaction["transaction_date"] }}
-                </strong>
-
-            </div>
-
-
-            <div class="finance-delete-row">
-
-                <span>
-                    Aina
-                </span>
-
-                <strong>
-
-                    {% if transaction["transaction_type"] == "income" %}
-
-                        Mapato
-
-                    {% else %}
-
-                        Matumizi
-
-                    {% endif %}
-
-                </strong>
-
-            </div>
-
-
-            <div class="finance-delete-row">
-
-                <span>
-                    Category
-                </span>
-
-                <strong>
-                    {{ transaction["category"] }}
-                </strong>
-
-            </div>
-
-
-            {% if transaction["member_name"] %}
-
-                <div class="finance-delete-row">
-
-                    <span>
-                        Muumini
-                    </span>
-
-                    <strong>
-                        {{ transaction["member_name"] }}
-                    </strong>
-
-                </div>
-
-            {% endif %}
-
-
-            <div class="finance-delete-row">
-
-                <span>
-                    Kiasi
-                </span>
-
-                <strong>
-                    TZS {{ "{:,.2f}".format(transaction["amount"]) }}
-                </strong>
-
-            </div>
-
-
-            {% if transaction["description"] %}
-
-                <div class="finance-delete-row">
-
-                    <span>
-                        Maelezo
-                    </span>
-
-                    <strong>
-                        {{ transaction["description"] }}
-                    </strong>
-
-                </div>
-
-            {% endif %}
-
-
-        </div>
-
-
-        <form
-            method="POST"
-            class="finance-delete-actions"
+    <form
+        method="POST"
+        class="finance-delete-actions"
+    >
+
+        <button
+            type="submit"
+            class="finance-delete-button"
         >
-
-            <button
-                type="submit"
-                class="finance-delete-button"
-            >
-                NDIYO, FUTA MUAMALA
-            </button>
+            NDIYO, FUTA MUAMALA
+        </button>
 
 
-            <a
-                href="{{ url_for('finance_transactions') }}"
-                class="finance-cancel-delete"
-            >
-                GHAIRI
-            </a>
+        <a
+            href="{{ url_for('finance_transactions') }}"
+            class="finance-cancel-delete"
+        >
+            GHAIRI
+        </a>
 
-        </form>
+    </form>
 
-
-    </section>
-
+</section>
+  
 
 </main>
 
-
-</body>
-
-</html>
+{% endblock %}

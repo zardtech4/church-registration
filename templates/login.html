@@ -1,133 +1,150 @@
 <!DOCTYPE html>
+
 <html lang="sw">
 
 <head>
 
-    <meta charset="UTF-8">
+  
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <title>Admin Login - Usajili wa Waumini</title>
+<title>
+    Admin Login -
+    {{ church_settings["church_name"] if church_settings else "Usajili wa Waumini" }}
+</title>
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+  
 
 </head>
 
-
 <body>
 
+<main class="login-page">
 
-    <main class="login-page">
-
-
-        <section class="login-card">
-
-
-            <div class="login-header">
-
-                <div class="login-icon">
-                    🔐
-                </div>
-
-                <h1>
-                    Admin Login
-                </h1>
-
-                <p>
-                    Ingia kwenye mfumo wa usimamizi.
-                </p>
-
-            </div>
+  
+<section class="login-card">
 
 
+    <div class="login-header">
 
-            {% if error %}
-
-                <div class="form-error">
-                    {{ error }}
-                </div>
-
-            {% endif %}
+        <div class="login-icon">
+            🔐
+        </div>
 
 
+        {% if church_settings and church_settings["church_name"] %}
 
-            <form
-                method="POST"
-                action="{{ url_for('login') }}"
-                class="login-form"
+            <h1>
+                {{ church_settings["church_name"] }}
+            </h1>
+
+        {% else %}
+
+            <h1>
+                Admin Login
+            </h1>
+
+        {% endif %}
+
+
+        <p>
+            Ingia kwenye mfumo wa usimamizi.
+        </p>
+
+    </div>
+
+
+    {% if error %}
+
+        <div class="form-error">
+            {{ error }}
+        </div>
+
+    {% endif %}
+
+
+    <form
+        method="POST"
+        action="{{ url_for('login') }}"
+        class="login-form"
+    >
+
+
+        <!-- USERNAME -->
+
+        <div class="form-group">
+
+            <label for="username">
+                Username
+            </label>
+
+            <input
+                type="text"
+                id="username"
+                name="username"
+                placeholder="Ingiza username"
+                autocomplete="username"
+                required
+                autofocus
             >
 
-
-                <div class="form-group">
-
-                    <label for="username">
-                        Username
-                    </label>
-
-                    <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        placeholder="Ingiza username"
-                        autocomplete="username"
-                        required
-                    >
-
-                </div>
+        </div>
 
 
+        <!-- PASSWORD -->
 
-                <div class="form-group">
+        <div class="form-group">
 
-                    <label for="password">
-                        Password
-                    </label>
+            <label for="password">
+                Password
+            </label>
 
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Ingiza password"
-                        autocomplete="current-password"
-                        required
-                    >
+            <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Ingiza password"
+                autocomplete="current-password"
+                required
+            >
 
-                </div>
-
-
-
-                <button
-                    type="submit"
-                    class="primary-button"
-                >
-                    INGIA
-                </button>
+        </div>
 
 
-            </form>
+        <!-- LOGIN -->
+
+        <button
+            type="submit"
+            class="primary-button"
+        >
+            INGIA
+        </button>
 
 
-
-            <div class="login-footer">
-
-                <a href="{{ url_for('register') }}">
-                    ← Rudi kwenye usajili
-                </a>
-
-            </div>
+    </form>
 
 
-        </section>
+    <div class="login-footer">
+
+        <a href="{{ url_for('register') }}">
+            ← Rudi kwenye usajili
+        </a>
+
+    </div>
 
 
-    </main>
+</section>
+  
 
+</main>
 
 </body>
 

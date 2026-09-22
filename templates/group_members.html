@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Group Members{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>{{ group["name"] }} — Members</h1>
+
+        <p>
+            Select the church members who belong to this group.
+        </p>
+    </div>
+
+</div>
+
+
+<div class="card form-card">
+
+    <form
+        method="POST"
+        action="{{ url_for('group_members', group_id=group['id']) }}"
+    >
+
+        {% if members %}
+
+            <div class="group-members-list">
+
+                {% for member in members %}
+
+                    <label class="group-member-option">
+
+                        <input
+                            type="checkbox"
+                            name="member_ids"
+                            value="{{ member['id'] }}"
+                            {% if member['id'] in assigned_ids %}
+                                checked
+                            {% endif %}
+                        >
+
+                        <div class="group-member-info">
+
+                            <strong>
+                                {{ member["jina_kamili"] }}
+                            </strong>
+
+                            <span>
+                                {{ member["namba_ya_usajili"] }}
+
+                                {% if member["namba_ya_sim"] %}
+                                    • {{ member["namba_ya_sim"] }}
+                                {% endif %}
+                            </span>
+
+                        </div>
+
+                    </label>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="empty-state">
+
+                <h3>No members found</h3>
+
+                <p>
+                    Register church members before assigning them
+                    to a group.
+                </p>
+
+                <a
+                    href="{{ url_for('register') }}"
+                    class="btn btn-primary"
+                >
+                    Register Member
+                </a>
+
+            </div>
+
+        {% endif %}
+
+
+        {% if members %}
+
+            <div class="form-actions">
+
+                <a
+                    href="{{ url_for('groups') }}"
+                    class="btn"
+                >
+                    Cancel
+                </a>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    Save Members
+                </button>
+
+            </div>
+
+        {% endif %}
+
+    </form>
+
+</div>
+
+{% endblock %}

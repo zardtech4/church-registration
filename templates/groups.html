@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Groups{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>Groups & Departments</h1>
+        <p>
+            Manage church groups, departments and their members.
+        </p>
+    </div>
+
+    {% if can_create_groups %}
+
+        <a
+            href="{{ url_for('create_group') }}"
+            class="btn btn-primary"
+        >
+            + Add Group
+        </a>
+
+    {% endif %}
+
+</div>
+
+
+<div class="card">
+
+    <div class="card-header">
+
+        <div>
+            <h2>Church Groups</h2>
+
+            <p>
+                {{ groups|length }}
+                group{% if groups|length != 1 %}s{% endif %}
+            </p>
+        </div>
+
+    </div>
+
+
+    {% if groups %}
+
+        <div class="table-responsive">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Leader</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for group in groups %}
+
+                        <tr>
+
+                            <td>
+                                {{ loop.index }}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    {{ group["name"] }}
+                                </strong>
+                            </td>
+
+                            <td>
+
+                                {% if group["description"] %}
+                                    {{ group["description"] }}
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if group["leader"] %}
+                                    {{ group["leader"] }}
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if group["phone"] %}
+                                    {{ group["phone"] }}
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if group["is_active"] %}
+
+                                    <span class="status-badge active">
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="status-badge inactive">
+                                        Inactive
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+<td>
+
+    <div class="action-buttons">
+
+        <a
+            href="{{ url_for('group_members', group_id=group['id']) }}"
+            class="btn btn-small"
+        >
+            Members
+        </a>
+
+
+        {% if can_edit_groups %}
+
+            <a
+                href="{{ url_for('edit_group', group_id=group['id']) }}"
+                class="btn btn-small"
+            >
+                Edit
+            </a>
+
+        {% endif %}
+
+
+        {% if can_delete_groups %}
+
+            <a
+                href="{{ url_for('delete_group', group_id=group['id']) }}"
+                class="btn btn-small btn-danger"
+            >
+                Delete
+            </a>
+
+        {% endif %}
+
+    </div>
+
+</td>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-state">
+
+            <h3>No groups yet</h3>
+
+            <p>
+                No church groups or departments have been created yet.
+            </p>
+
+            {% if can_create_groups %}
+
+                <a
+                    href="{{ url_for('create_group') }}"
+                    class="btn btn-primary"
+                >
+                    Create the first group
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

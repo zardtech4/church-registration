@@ -1,355 +1,272 @@
-<!DOCTYPE html>
-<html lang="sw">
+{% extends "base.html" %}
 
-<head>
+{% block title %}
+Hariri Muumini
+{% endblock %}
 
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        Hariri Muumini
-    </title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-
-</head>
-
-
-<body>
-
-
-<nav class="navbar">
-
-    <div class="nav-brand">
-
-        {% if church_settings and church_settings["church_name"] %}
-            {{ church_settings["church_name"] }}
-        {% else %}
-            CHURCH REGISTRATION
-        {% endif %}
-
-    </div>
-
-
-    <div class="nav-links">
-
-        <a href="{{ url_for('dashboard') }}">
-            Dashboard
-        </a>
-
-        <a href="{{ url_for('register') }}">
-            Sajili
-        </a>
-
-        <a href="{{ url_for('members') }}">
-            Waumini
-        </a>
-
-        {% if can_view_subzones %}
-
-            <a href="{{ url_for('subzones') }}">
-                Subzones
-            </a>
-
-        {% endif %}
-
-    </div>
-
-</nav>
-
+{% block content %}
 
 <main class="edit-container">
 
+  
+<section class="edit-card">
 
-    <section class="edit-card">
+    <div class="edit-header">
 
+        <span class="dashboard-label">
+            HARIRI TAARIFA
+        </span>
 
-        <div class="edit-header">
+        <h1>
+            Hariri Muumini
+        </h1>
 
-            <span class="dashboard-label">
-                HARIRI TAARIFA
-            </span>
-
-            <h1>
-                Hariri Muumini
-            </h1>
-
-            <p>
-                Badilisha taarifa za muumini hapa chini.
-            </p>
-
-        </div>
-
-
-        <div class="registration-badge">
-
-            <span>
-                Namba ya Usajili
-            </span>
-
-            <strong>
-                {{ member["namba_ya_usajili"] }}
-            </strong>
-
-        </div>
-
-
-        <p class="edit-number-note">
-
-            Namba ya usajili haiwezi kubadilishwa.
-
+        <p>
+            Badilisha taarifa za muumini hapa chini.
         </p>
 
-
-        {% if error %}
-
-            <div class="form-error">
-                {{ error }}
-            </div>
-
-        {% endif %}
+    </div>
 
 
-        <form
-            method="POST"
-            enctype="multipart/form-data"
-        >
+    <div class="registration-badge">
+
+        <span>
+            Namba ya Usajili
+        </span>
+
+        <strong>
+            {{ member["namba_ya_usajili"] }}
+        </strong>
+
+    </div>
 
 
-            <div class="form-group">
+    <p class="edit-number-note">
+        Namba ya usajili haiwezi kubadilishwa.
+    </p>
 
-                <label for="jina_kamili">
-                    Jina Kamili
-                </label>
 
-                <input
-                    type="text"
-                    id="jina_kamili"
-                    name="jina_kamili"
-                    value="{{ member['jina_kamili'] }}"
-                    required
+    {% if error %}
+
+        <div class="form-error">
+            {{ error }}
+        </div>
+
+    {% endif %}
+
+
+    <form
+        method="POST"
+        enctype="multipart/form-data"
+    >
+
+
+        <div class="form-group">
+
+            <label for="jina_kamili">
+                Jina Kamili
+            </label>
+
+            <input
+                type="text"
+                id="jina_kamili"
+                name="jina_kamili"
+                value="{{ member['jina_kamili'] }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="makazi">
+                Makazi
+            </label>
+
+            <input
+                type="text"
+                id="makazi"
+                name="makazi"
+                value="{{ member['makazi'] }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="namba_ya_sim">
+                Namba ya Simu
+            </label>
+
+            <input
+                type="tel"
+                id="namba_ya_sim"
+                name="namba_ya_sim"
+                value="{{ member['namba_ya_sim'] or '' }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="jinsia">
+                Jinsia
+            </label>
+
+            <select
+                id="jinsia"
+                name="jinsia"
+                required
+            >
+
+                <option
+                    value="Mwanaume"
+                    {% if member["jinsia"] == "Mwanaume" %}
+                        selected
+                    {% endif %}
                 >
+                    Mwanaume
+                </option>
 
-            </div>
 
-
-            <div class="form-group">
-
-                <label for="makazi">
-                    Makazi
-                </label>
-
-                <input
-                    type="text"
-                    id="makazi"
-                    name="makazi"
-                    value="{{ member['makazi'] }}"
-                    required
+                <option
+                    value="Mwanamke"
+                    {% if member["jinsia"] == "Mwanamke" %}
+                        selected
+                    {% endif %}
                 >
+                    Mwanamke
+                </option>
 
-            </div>
+            </select>
 
-
-            <div class="form-group">
-
-                <label for="namba_ya_sim">
-                    Namba ya Simu
-                </label>
-
-                <input
-                    type="tel"
-                    id="namba_ya_sim"
-                    name="namba_ya_sim"
-                    value="{{ member['namba_ya_sim'] or '' }}"
-                    required
-                >
-
-            </div>
+        </div>
 
 
-            <div class="form-group">
+        <!-- SUBZONE -->
 
-                <label for="jinsia">
-                    Jinsia
-                </label>
+        <div class="form-group">
 
-                <select
-                    id="jinsia"
-                    name="jinsia"
-                    required
-                >
+            <label for="subzone_id">
+                Subzone
+            </label>
+
+            <select
+                id="subzone_id"
+                name="subzone_id"
+            >
+
+                <option value="">
+                    -- Hakuna Subzone --
+                </option>
+
+
+                {% for subzone in subzones %}
 
                     <option
-                        value="Mwanaume"
-
-                        {% if member["jinsia"] == "Mwanaume" %}
+                        value="{{ subzone['id'] }}"
+                        {% if member["subzone_id"] == subzone["id"] %}
                             selected
                         {% endif %}
                     >
-
-                        Mwanaume
-
+                        {{ subzone["name"] }}
                     </option>
 
+                {% endfor %}
 
-                    <option
-                        value="Mwanamke"
-
-                        {% if member["jinsia"] == "Mwanamke" %}
-                            selected
-                        {% endif %}
-                    >
-
-                        Mwanamke
-
-                    </option>
-
-                </select>
-
-            </div>
+            </select>
 
 
-            <!-- SUBZONE -->
+            {% if not subzones %}
 
-            <div class="form-group">
-
-                <label for="subzone_id">
-                    Subzone
-                </label>
-
-                <select
-                    id="subzone_id"
-                    name="subzone_id"
-                >
-
-                    <option value="">
-                        -- Hakuna Subzone --
-                    </option>
-
-
-                    {% for subzone in subzones %}
-
-                        <option
-                            value="{{ subzone['id'] }}"
-
-                            {% if member["subzone_id"] == subzone["id"] %}
-                                selected
-                            {% endif %}
-                        >
-
-                            {{ subzone["name"] }}
-
-                        </option>
-
-                    {% endfor %}
-
-                </select>
-
-
-                {% if not subzones %}
-
-                    <small>
-                        Hakuna subzone iliyowekwa bado.
-                    </small>
-
-                {% endif %}
-
-            </div>
-
-
-            <div class="current-photo-section">
-
-                <label>
-                    Picha ya Sasa
-                </label>
-
-
-                {% if member["picha"] %}
-
-                    <img
-                        src="{{ url_for(
-                            'static',
-                            filename='Uploads/' + member['picha']
-                        ) }}"
-                        alt="Picha ya {{ member['jina_kamili'] }}"
-                        class="edit-current-photo"
-                    >
-
-                {% else %}
-
-                    <div class="edit-no-photo">
-                        Hakuna picha
-                    </div>
-
-                {% endif %}
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label for="picha">
-
-                    Badilisha Picha
-
-                </label>
-
-                <input
-                    type="file"
-                    id="picha"
-                    name="picha"
-                    accept="image/*"
-                >
-
-                <small class="photo-help">
-
-                    Acha tupu kama hutaki kubadilisha picha.
-
+                <small>
+                    Hakuna subzone iliyowekwa bado.
                 </small>
 
-            </div>
+            {% endif %}
+
+        </div>
 
 
-            <div class="edit-actions">
+        <div class="current-photo-section">
 
-                <button
-                    type="submit"
-                    class="primary-button"
+            <label>
+                Picha ya Sasa
+            </label>
+
+
+            {% if member["picha"] %}
+
+                <img
+                    src="{{ url_for(
+                        'static',
+                        filename='uploads/' + member['picha']
+                    ) }}"
+                    alt="Picha ya {{ member['jina_kamili'] }}"
+                    class="edit-current-photo"
                 >
 
-                    HIFADHI MABADILIKO
+            {% else %}
 
-                </button>
+                <div class="edit-no-photo">
+                    Hakuna picha
+                </div>
 
+            {% endif %}
 
-                <a
-                    href="{{ url_for('members') }}"
-                    class="cancel-button"
-                >
-
-                    RUDI KWENYE ORODHA
-
-                </a>
-
-            </div>
+        </div>
 
 
-        </form>
+        <div class="form-group">
+
+            <label for="picha">
+                Badilisha Picha
+            </label>
+
+            <input
+                type="file"
+                id="picha"
+                name="picha"
+                accept="image/*"
+            >
+
+            <small class="photo-help">
+                Acha tupu kama hutaki kubadilisha picha.
+            </small>
+
+        </div>
 
 
-    </section>
+        <div class="edit-actions">
 
+            <button
+                type="submit"
+                class="primary-button"
+            >
+                HIFADHI MABADILIKO
+            </button>
+
+
+            <a
+                href="{{ url_for('members') }}"
+                class="cancel-button"
+            >
+                RUDI KWENYE ORODHA
+            </a>
+
+        </div>
+
+
+    </form>
+
+</section>
+  
 
 </main>
 
-
-</body>
-
-</html>
+{% endblock %}

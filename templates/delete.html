@@ -1,201 +1,158 @@
-<!DOCTYPE html>
-<html lang="sw">
+{% extends "base.html" %}
 
-<head>
+{% block title %}
+Thibitisha Kufuta
+{% endblock %}
 
-    <meta charset="UTF-8">
+{% block content %}
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<main class="delete-container">
 
-    <title>Thibitisha Kufuta</title>
+  
+<section class="delete-card">
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
+    <!-- WARNING ICON -->
 
-</head>
-
-<body>
-
-    <!-- NAVIGATION -->
-
-    <nav class="navbar">
-
-        <div class="nav-brand">
-            CHURCH REGISTRATION
-        </div>
-
-        <div class="nav-links">
-
-            <a href="/dashboard">
-                Dashboard
-            </a>
-
-            <a href="/">
-                Sajili
-            </a>
-
-            <a href="/members">
-                Waumini
-            </a>
-
-        </div>
-
-    </nav>
+    <div class="delete-icon">
+        !
+    </div>
 
 
-    <!-- DELETE CONTAINER -->
+    <!-- HEADER -->
 
-    <main class="delete-container">
+    <div class="delete-header">
 
-        <section class="delete-card">
+        <span class="dashboard-label">
+            TAHADHARI YA MFUMO
+        </span>
 
-            <!-- WARNING ICON -->
+        <h1>
+            Thibitisha Kufuta
+        </h1>
 
-            <div class="delete-icon">
-                !
+        <p>
+            Una uhakika unataka kumfuta mwumini huyu?
+        </p>
+
+    </div>
+
+
+    <!-- MEMBER INFORMATION -->
+
+    <div class="delete-member">
+
+        {% if member["picha"] %}
+
+            <img
+                src="{{ url_for(
+                    'static',
+                    filename='uploads/' + member['picha']
+                ) }}"
+                alt="Picha ya {{ member['jina_kamili'] }}"
+                class="delete-photo"
+            >
+
+        {% else %}
+
+            <div class="delete-photo-placeholder">
+                👤
             </div>
 
+        {% endif %}
 
-            <!-- HEADER -->
 
-            <div class="delete-header">
+        <div class="delete-details">
 
-                <span class="dashboard-label">
-                    TAHADHARI YA MFUMO
+            <h2>
+                {{ member["jina_kamili"] }}
+            </h2>
+
+
+            <p>
+
+                <span>
+                    Namba ya Usajili
                 </span>
 
-                <h1>
-                    Thibitisha Kufuta
-                </h1>
-
-                <p>
-                    Una uhakika unataka kumfuta mwumini huyu?
-                </p>
-
-            </div>
-
-
-            <!-- MEMBER INFORMATION -->
-
-            <div class="delete-member">
-
-                {% if  member["picha"] %}
-
-                    <img
-                        src="{{ url_for(
-                            'static',
-                            filename='uploads/' +  member['picha']
-                        ) }}"
-                        alt="Picha ya {{  member['jina_kamili'] }}"
-                        class="delete-photo"
-                    >
-
-                {% else %}
-
-                    <div class="delete-photo-placeholder">
-                        👤
-                    </div>
-
-                {% endif %}
-
-
-                <div class="delete-details">
-
-                    <h2>
-                        {{  member["jina_kamili"] }}
-                    </h2>
-
-                    <p>
-
-                        <span>
-                            Namba ya Usajili
-                        </span>
-
-                        <strong>
-                            {{  member["namba_ya_usajili"] }}
-                        </strong>
-
-                    </p>
-
-
-                    <p>
-
-                        <span>
-                            Namba ya Simu
-                        </span>
-
-                        <strong>
-                            {{  member["namba_ya_sim"] }}
-                        </strong>
-
-                    </p>
-
-
-                    <p>
-
-                        <span>
-                            Makazi
-                        </span>
-
-                        <strong>
-                            {{  member["makazi"] }}
-                        </strong>
-
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <!-- WARNING MESSAGE -->
-
-            <div class="delete-warning">
-
                 <strong>
-                    ⚠️ Hatua hii haiwezi kutenduliwa.
+                    {{ member["namba_ya_usajili"] }}
                 </strong>
 
-                <p>
-                    Taarifa za mwumini huyu pamoja na picha yake
-                    zitaondolewa kwenye mfumo.
-                </p>
-
-            </div>
+            </p>
 
 
-            <!-- DELETE ACTION -->
+            <p>
 
-            <form method="POST">
+                <span>
+                    Namba ya Simu
+                </span>
 
-                <button
-                    type="submit"
-                    class="danger-button"
-                >
-                    NDIO, FUTA MWUMINI
-                </button>
+                <strong>
+                    {{ member["namba_ya_sim"] }}
+                </strong>
 
-            </form>
+            </p>
 
 
-            <!-- CANCEL -->
+            <p>
 
-            <a
-                href="/members"
-                class="cancel-button"
-            >
-                HAPANA, RUDI KWENYE ORODHA
-            </a>
+                <span>
+                    Makazi
+                </span>
 
-        </section>
+                <strong>
+                    {{ member["makazi"] }}
+                </strong>
 
-    </main>
+            </p>
 
-</body>
+        </div>
 
-</html>
+    </div>
+
+
+    <!-- WARNING MESSAGE -->
+
+    <div class="delete-warning">
+
+        <strong>
+            ⚠️ Hatua hii haiwezi kutenduliwa.
+        </strong>
+
+        <p>
+            Taarifa za mwumini huyu pamoja na picha yake
+            zitaondolewa kwenye mfumo.
+        </p>
+
+    </div>
+
+
+    <!-- DELETE ACTION -->
+
+    <form method="POST">
+
+        <button
+            type="submit"
+            class="danger-button"
+        >
+            NDIO, FUTA MWUMINI
+        </button>
+
+    </form>
+
+
+    <!-- CANCEL -->
+
+    <a
+        href="{{ url_for('members') }}"
+        class="cancel-button"
+    >
+        HAPANA, RUDI KWENYE ORODHA
+    </a>
+
+</section>
+  
+
+</main>
+
+{% endblock %}

@@ -314,6 +314,15 @@ def get_all_subzones_with_counts():
 # ============================================================
 # REGISTRATION NUMBER
 # ============================================================
+# ============================================================
+# DATABASE INITIALIZATION
+# ============================================================
+
+def init_database():
+
+    db = get_db()
+
+    # Database tables will be initialized here.
 
 def generate_registration_number():
 
@@ -366,344 +375,13 @@ def generate_registration_number():
 # AUTHENTICATION HELPERS
 # ============================================================
 
-def get_current_admin():
-
-    admin_id = session.get("admin_id")
-
-    if not admin_id:
-        return None
-
-    db = get_db()
-
-    admin = db.execute(
-        """
-        SELECT
-            a.id,
-            a.username,
-            a.full_name,
-            a.email,
-            a.is_active,
-            a.created_at,
-            a.last_login,
-            r.name AS role_name
-        FROM admins a
-        LEFT JOIN roles r
-            ON r.id = a.role_id
-        WHERE a.id = %s
-        """,
-        (admin_id,)
-    ).fetchone()
-
-    if not admin:
-        session.clear()
-        return None
-
-    if not admin["is_active"]:
-        session.clear()
-        return None
-
-    permissions = db.execute(
-        """
-        SELECT
-            p.name
-        FROM permissions p
-        INNER JOIN role_permissions rp
-            ON rp.permission_id = p.id
-        INNER JOIN admins a
-            ON a.role_id = rp.role_id
-        WHERE a.id = %s
-        """,
-        (admin_id,)
-    ).fetchall()
-
-    permission_names = {
-        row["name"]
-        for row in permissions
-    }
-
-    admin = dict(admin)
-
-    admin["permissions"] = permission_names
-
-    return admin
-
-
-def login_required(view):
-
-    @wraps(view)
-    def wrapped_view(*args, **kwargs):
-
-        admin = get_current_admin()
-
-        if not admin:
-
-            flash(
-                "Tafadhali ingia kwanza.",
-                "error"
-            )
-
-            return redirect(
-                url_for("login")
-            )
-
-        return view(*args, **kwargs)
-
-    return wrapped_view
-
-
-def permission_required(permission):
-
-    def decorator(view):
-
-        @wraps(view)
-        def wrapped_view(*args, **kwargs):
-
-            admin = get_current_admin()
-
-            if not admin:
-
-                flash(
-                    "Tafadhali ingia kwanza.",
-                    "error"
-                )
-
-                return redirect(
-                    url_for("login")
-                )
-
-            permissions = admin.get(
-                "permissions",
-                set()
-            )
-
-            if (
-                permission not in permissions
-                and admin.get("role_name") != "superadmin"
-            ):
-
-                return render_template(
-                    "403.html"
-                ), 403
-
-            return view(*args, **kwargs)
-
-        return wrapped_view
-
-    return decorator
-
-
-# ============================================================
-# AUDIT LOG
-# ============================================================
-
-def log_action(
-    action,
-    description=""
-):
-
-    admin = get_current_admin()
-
-    if not admin:
-        return
-
-    db = get_db()
-
-    ip_address = (
-        request.headers.get(
-            "X-Forwarded-For",
-            request.remote_addr
-        )
-    )
-
-    if ip_address and "," in ip_address:
-
-        ip_address = (
-            ip_address
-            .split(",")[0]
-            .strip()
-        )
-
-    db.execute(
-        """
-        INSERT INTO audit_logs (
-            admin_id,
-            action,
-            description,
-            ip_address
-        )
-        VALUES (
-            %s,
-            %s,
-            %s,
-            %s
-        )
-        """,
-        (
-            admin["id"],
-            action,
-            description,
-            ip_address
-        )
-    )
-
-
-# ============================================================
-# DATABASE INITIALIZATION / MIGRATIONS
-# ============================================================
-
-def init_database():
-
-    db = get_db()
-
     # --------------------------------------------------------
-    # ROLES
+    # GROUPS
     # --------------------------------------------------------
 
     db.execute(
         """
-        CREATE TABLE IF NOT EXISTS roles (
-            id INTEGER
-            GENERATED ALWAYS AS IDENTITY
-            PRIMARY KEY,
-
-            name TEXT NOT NULL UNIQUE
-        )
-        """
-    )
-
-    # --------------------------------------------------------
-    # PERMISSIONS
-    # --------------------------------------------------------
-
-    db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS permissions (
-            id INTEGER
-            GENERATED ALWAYS AS IDENTITY
-            PRIMARY KEY,
-
-            name TEXT NOT NULL UNIQUE
-        )
-        """
-    )
-
-    # --------------------------------------------------------
-    # ROLE PERMISSIONS
-    # --------------------------------------------------------
-
-    db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS role_permissions (
-            role_id INTEGER NOT NULL,
-            permission_id INTEGER NOT NULL,
-
-            PRIMARY KEY (
-                role_id,
-                permission_id
-            ),
-
-            FOREIGN KEY (role_id)
-                REFERENCES roles(id)
-                ON DELETE CASCADE,
-
-            FOREIGN KEY (permission_id)
-                REFERENCES permissions(id)
-                ON DELETE CASCADE
-        )
-        """
-    )
-
-    # --------------------------------------------------------
-    # ADMINS
-    # --------------------------------------------------------
-
-    db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS admins (
-            id INTEGER
-            GENERATED ALWAYS AS IDENTITY
-            PRIMARY KEY,
-
-            username TEXT NOT NULL UNIQUE,
-
-            password_hash TEXT NOT NULL,
-
-            full_name TEXT NOT NULL,
-
-            email TEXT,
-
-            role_id INTEGER,
-
-            is_active BOOLEAN
-            NOT NULL DEFAULT TRUE,
-
-            created_at TIMESTAMP
-            NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-            last_login TIMESTAMP,
-
-            FOREIGN KEY (role_id)
-                REFERENCES roles(id)
-                ON DELETE SET NULL
-        )
-        """
-    )
-
-    # Existing installations may not have is_active.
-    db.execute(
-        """
-        ALTER TABLE admins
-        ADD COLUMN IF NOT EXISTS
-        is_active BOOLEAN
-        NOT NULL DEFAULT TRUE
-        """
-    )
-
-    # --------------------------------------------------------
-    # AUDIT LOGS
-    # --------------------------------------------------------
-
-    db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS audit_logs (
-            id INTEGER
-            GENERATED ALWAYS AS IDENTITY
-            PRIMARY KEY,
-
-            admin_id INTEGER,
-
-            action TEXT NOT NULL,
-
-            description TEXT,
-
-            ip_address TEXT,
-
-            created_at TIMESTAMP
-            NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-            FOREIGN KEY (admin_id)
-                REFERENCES admins(id)
-                ON DELETE SET NULL
-        )
-        """
-    )
-
-    # Existing installations may not have ip_address.
-    db.execute(
-        """
-        ALTER TABLE audit_logs
-        ADD COLUMN IF NOT EXISTS
-        ip_address TEXT
-        """
-    )
-
-    # --------------------------------------------------------
-    # SUBZONES
-    # --------------------------------------------------------
-
-    db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS subzones (
+        CREATE TABLE IF NOT EXISTS groups (
             id INTEGER
             GENERATED ALWAYS AS IDENTITY
             PRIMARY KEY,
@@ -712,72 +390,12 @@ def init_database():
 
             description TEXT,
 
-            active INTEGER
-            NOT NULL DEFAULT 1,
-
-            created_at TIMESTAMP
-            NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-            updated_at TIMESTAMP
-            NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )
-        """
-    )
-
-    # --------------------------------------------------------
-    # CHURCH SETTINGS
-    # --------------------------------------------------------
-
-    db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS church_settings (
-            id INTEGER PRIMARY KEY,
-
-            church_name TEXT,
-
-            address TEXT,
+            leader TEXT,
 
             phone TEXT,
 
-            email TEXT,
-
-            logo TEXT
-        )
-        """
-    )
-
-    db.execute(
-        """
-        INSERT INTO church_settings (
-            id,
-            church_name
-        )
-        VALUES (
-            1,
-            'KANISA'
-        )
-        ON CONFLICT (id)
-        DO NOTHING
-        """
-    )
-
-    # --------------------------------------------------------
-    # ANNOUNCEMENTS
-    # --------------------------------------------------------
-
-    db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS announcements (
-            id INTEGER
-            GENERATED ALWAYS AS IDENTITY
-            PRIMARY KEY,
-
-            title TEXT NOT NULL,
-
-            content TEXT NOT NULL,
-
-            published BOOLEAN
-            NOT NULL DEFAULT FALSE,
+            is_active BOOLEAN
+            NOT NULL DEFAULT TRUE,
 
             created_at TIMESTAMP
             NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -789,13 +407,42 @@ def init_database():
     )
 
     # --------------------------------------------------------
-    # MEMBERS
+    # MEMBER GROUP
     # --------------------------------------------------------
-    #
-    # IMPORTANT:
-    # We do NOT recreate or replace the existing members
-    # table. This preserves the existing member data.
-    #
+
+    db.execute(
+        """
+        ALTER TABLE waumini
+        ADD COLUMN IF NOT EXISTS group_id INTEGER
+        """
+    )
+
+    db.execute(
+        """
+        DO $$
+        BEGIN
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'waumini_group_id_fkey'
+            ) THEN
+
+                ALTER TABLE waumini
+                ADD CONSTRAINT waumini_group_id_fkey
+                FOREIGN KEY (group_id)
+                REFERENCES groups(id)
+                ON DELETE SET NULL;
+
+            END IF;
+
+        END
+        $$;
+        """
+        )
+
+    # --------------------------------------------------------
+    # MEMBERS
     # --------------------------------------------------------
 
     db.execute(
@@ -805,63 +452,83 @@ def init_database():
             GENERATED ALWAYS AS IDENTITY
             PRIMARY KEY,
 
-            namba_ya_usajili TEXT NOT NULL UNIQUE,
+            namba_ya_usajili TEXT
+            NOT NULL UNIQUE,
 
-            jina_kamili TEXT NOT NULL,
+            jina_kamili TEXT
+            NOT NULL,
 
-            makazi TEXT NOT NULL,
+            makazi TEXT
+            NOT NULL,
 
-            jinsia TEXT NOT NULL,
+            jinsia TEXT
+            NOT NULL,
 
             picha TEXT,
 
-            created_at TIMESTAMP
-            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            namba_ya_sim TEXT,
 
-            namba_ya_sim TEXT
+            created_at TIMESTAMP
+            NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """
     )
 
-    # Existing members table migration.
+    # --------------------------------------------------------
+    # MEMBER GROUPS
+    # --------------------------------------------------------
+    #
+    # Kept temporarily for compatibility with the existing
+    # database. The new system uses waumini.group_id.
+    #
+    # --------------------------------------------------------
+
     db.execute(
         """
-        ALTER TABLE waumini
-        ADD COLUMN IF NOT EXISTS
-        subzone_id INTEGER
-        """
-    )
+        CREATE TABLE IF NOT EXISTS member_groups (
+            id INTEGER
+            GENERATED ALWAYS AS IDENTITY
+            PRIMARY KEY,
 
-    # Add FK only if it is not already present.
-    db.execute(
-        """
-        DO $$
-        BEGIN
+            member_id INTEGER
+            NOT NULL,
 
-            IF NOT EXISTS (
-                SELECT 1
-                FROM pg_constraint
-                WHERE conname =
-                    'waumini_subzone_id_fkey'
-            ) THEN
+            group_id INTEGER
+            NOT NULL,
 
-                ALTER TABLE waumini
+            joined_at TIMESTAMP
+            NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-                ADD CONSTRAINT
-                    waumini_subzone_id_fkey
+            CONSTRAINT
+                member_groups_member_id_fkey
 
-                FOREIGN KEY (
-                    subzone_id
-                )
+            FOREIGN KEY (
+                member_id
+            )
 
-                REFERENCES subzones(id)
+            REFERENCES waumini(id)
 
-                ON DELETE SET NULL;
+            ON DELETE CASCADE,
 
-            END IF;
+            CONSTRAINT
+                member_groups_group_id_fkey
 
-        END
-        $$;
+            FOREIGN KEY (
+                group_id
+            )
+
+            REFERENCES groups(id)
+
+            ON DELETE CASCADE,
+
+            CONSTRAINT
+                member_groups_unique
+
+            UNIQUE (
+                member_id,
+                group_id
+            )
+        )
         """
     )
 
@@ -895,7 +562,12 @@ def init_database():
         "announcements.view",
         "announcements.create",
         "announcements.edit",
-        "announcements.delete"
+        "announcements.delete",
+
+        "groups.view",
+        "groups.create",
+        "groups.edit",
+        "groups.delete"
     ]
 
     for permission_name in permission_names:
@@ -996,7 +668,12 @@ def init_database():
         "announcements.view",
         "announcements.create",
         "announcements.edit",
-        "announcements.delete"
+        "announcements.delete",
+
+        "groups.view",
+        "groups.create",
+        "groups.edit",
+        "groups.delete"
     ]
 
     for permission_name in admin_permissions:
@@ -1013,6 +690,7 @@ def init_database():
                 p.id
 
             FROM roles r
+
             CROSS JOIN permissions p
 
             WHERE r.name = 'admin'
@@ -1043,7 +721,9 @@ def init_database():
 
         "announcements.view",
         "announcements.create",
-        "announcements.edit"
+        "announcements.edit",
+
+        "groups.view"
     ]
 
     for permission_name in secretary_permissions:
@@ -1060,6 +740,7 @@ def init_database():
                 p.id
 
             FROM roles r
+
             CROSS JOIN permissions p
 
             WHERE r.name = 'secretary'
@@ -1084,7 +765,8 @@ def init_database():
 
         "members.view",
 
-        "subzones.view"
+        "subzones.view",
+        "groups.view"
     ]
 
     for permission_name in treasurer_permissions:
@@ -1101,6 +783,7 @@ def init_database():
                 p.id
 
             FROM roles r
+
             CROSS JOIN permissions p
 
             WHERE r.name = 'treasurer'
@@ -1177,7 +860,132 @@ def init_database():
             )
 
     db.commit()
+ # ============================================================
+# AUTHENTICATION & PERMISSIONS
+# ============================================================
 
+def get_current_admin():
+
+    admin_id = session.get("admin_id")
+
+    if not admin_id:
+        return None
+
+    db = get_db()
+
+    admin = db.execute(
+        """
+        SELECT
+            admins.id,
+            admins.username,
+            admins.full_name,
+            admins.is_active,
+            admins.role_id,
+            roles.name AS role_name
+        FROM admins
+        JOIN roles
+            ON admins.role_id = roles.id
+        WHERE admins.id = %s
+        """,
+        (admin_id,)
+    ).fetchone()
+
+    if not admin:
+
+        session.clear()
+
+        return None
+
+    if not admin["is_active"]:
+
+        session.clear()
+
+        return None
+
+    permissions = db.execute(
+        """
+        SELECT
+            permissions.name
+        FROM permissions
+        JOIN role_permissions
+            ON permissions.id = role_permissions.permission_id
+        WHERE role_permissions.role_id = %s
+        """,
+        (admin["role_id"],)
+    ).fetchall()
+
+    admin = dict(admin)
+
+    admin["permissions"] = {
+        row["name"]
+        for row in permissions
+    }
+
+    return admin
+
+
+def login_required(view):
+
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+
+        admin = get_current_admin()
+
+        if not admin:
+
+            flash(
+                "Tafadhali ingia kwanza.",
+                "error"
+            )
+
+            return redirect(
+                url_for("login")
+            )
+
+        return view(*args, **kwargs)
+
+    return wrapped_view
+
+
+def permission_required(permission):
+
+    def decorator(view):
+
+        @wraps(view)
+        def wrapped_view(*args, **kwargs):
+
+            admin = get_current_admin()
+
+            if not admin:
+
+                flash(
+                    "Tafadhali ingia kwanza.",
+                    "error"
+                )
+
+                return redirect(
+                    url_for("login")
+                )
+
+            permissions = admin.get(
+                "permissions",
+                set()
+            )
+
+            if (
+                permission not in permissions
+                and admin.get("role_name") != "superadmin"
+            ):
+
+                return render_template(
+                    "403.html"
+                ), 403
+
+            return view(*args, **kwargs)
+
+        return wrapped_view
+
+    return decorator
 
 # ============================================================
 # GLOBAL TEMPLATE VARIABLES
@@ -1321,6 +1129,27 @@ def inject_global_variables():
             is_superadmin
             or "announcements.delete"
             in permissions,
+
+       # Groups 
+        "can_view_groups":
+            is_superadmin
+             or "groups.view"
+            in permissions,
+
+        "can_create_groups":
+            is_superadmin
+            or "groups.create"
+            in permissions,
+
+        "can_edit_groups":
+            is_superadmin
+            or "groups.edit"
+            in permissions,
+
+        "can_delete_groups":
+            is_superadmin
+             or "groups.delete"
+             in permissions,
 
         # Finance
         "can_view_finance":
@@ -1630,12 +1459,6 @@ def register():
 )
 def login():
 
-    if get_current_admin():
-
-        return redirect(
-            url_for("dashboard")
-        )
-
     if request.method == "POST":
 
         username = request.form.get(
@@ -1653,85 +1476,57 @@ def login():
         admin = db.execute(
             """
             SELECT
-                a.id,
-                a.username,
-                a.password_hash,
-                a.full_name,
-                a.is_active,
-                r.name AS role_name
-            FROM admins a
-            LEFT JOIN roles r
-                ON r.id = a.role_id
-            WHERE a.username = %s
+                admins.id,
+                admins.username,
+                admins.password_hash,
+                admins.full_name,
+                admins.is_active,
+                admins.role_id,
+                roles.name AS role_name
+            FROM admins
+            JOIN roles
+                ON admins.role_id = roles.id
+            WHERE admins.username = %s
             """,
             (username,)
         ).fetchone()
 
         if (
-            admin
-            and admin["is_active"]
-            and check_password_hash(
+            not admin
+            or not admin["is_active"]
+            or not check_password_hash(
                 admin["password_hash"],
                 password
             )
         ):
 
-            session.clear()
-
-            session["admin_id"] = (
-                admin["id"]
-            )
-
-            db.execute(
-                """
-                UPDATE admins
-                SET last_login =
-                    CURRENT_TIMESTAMP
-                WHERE id = %s
-                """,
-                (admin["id"],)
-            )
-
-            db.execute(
-                """
-                INSERT INTO audit_logs (
-                    admin_id,
-                    action,
-                    description,
-                    ip_address
-                )
-                VALUES (
-                    %s,
-                    %s,
-                    %s,
-                    %s
-                )
-                """,
-                (
-                    admin["id"],
-                    "LOGIN",
-                    "Admin logged in",
-                    request.remote_addr
-                )
-            )
-
             flash(
-                "Umefanikiwa kuingia.",
-                "success"
+                "Username au password si sahihi.",
+                "error"
             )
 
-            return redirect(
-                url_for("dashboard")
+            return render_template(
+                "login.html"
             )
+
+        session.clear()
+
+        session["admin_id"] = admin["id"]
 
         flash(
-            "Username au password si sahihi.",
-            "error"
+            "Umeingia kwenye mfumo.",
+            "success"
+        )
+
+        return redirect(
+            url_for("dashboard")
         )
 
     return render_template(
         "login.html"
     )
+
+
 
 
 # ============================================================
@@ -4229,7 +4024,7 @@ def edit_subzone(subzone_id):
 
 @app.route(
     "/subzones/<int:subzone_id>/delete",
-    methods=["POST"]
+    methods=["GET", "POST"]
 )
 @login_required
 @permission_required("subzones.delete")
@@ -4251,35 +4046,106 @@ def delete_subzone(subzone_id):
     if not subzone:
         abort(404)
 
-    # IMPORTANT:
-    # Existing database uses INTEGER active:
-    # 1 = active
-    # 0 = inactive
-    #
-    # We deactivate rather than physically deleting so
-    # existing member relationships are preserved.
+    if request.method == "POST":
+
+        # Remove the subzone association from members.
+        # This does NOT delete the members.
+        db.execute(
+            """
+            UPDATE waumini
+            SET subzone_id = NULL
+            WHERE subzone_id = %s
+            """,
+            (subzone_id,)
+        )
+
+        # Now delete the subzone itself.
+        db.execute(
+            """
+            DELETE FROM subzones
+            WHERE id = %s
+            """,
+            (subzone_id,)
+        )
+
+        log_action(
+            "DELETE_SUBZONE",
+            (
+                "Deleted subzone: "
+                f"{subzone['name']}"
+            )
+        )
+
+        flash(
+            "Subzone imefutwa. Waumini waliokuwa ndani yake wamehifadhiwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for("subzones")
+        )
+
+    return render_template(
+        "delete.html",
+        subzone=subzone
+    )
+
+@app.route(
+    "/subzones/<int:subzone_id>/toggle",
+    methods=["POST"]
+)
+@login_required
+@permission_required("subzones.edit")
+def toggle_subzone(subzone_id):
+
+    db = get_db()
+
+    subzone = db.execute(
+        """
+        SELECT
+            id,
+            name,
+            active
+        FROM subzones
+        WHERE id = %s
+        """,
+        (subzone_id,)
+    ).fetchone()
+
+    if not subzone:
+        abort(404)
+
+    new_status = 0 if subzone["active"] == 1 else 1
 
     db.execute(
         """
         UPDATE subzones
         SET
-            active = 0,
+            active = %s,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = %s
         """,
-        (subzone_id,)
+        (
+            new_status,
+            subzone_id
+        )
     )
 
     log_action(
-        "DELETE_SUBZONE",
+        "TOGGLE_SUBZONE",
         (
-            "Deactivated subzone: "
-            f"{subzone['name']}"
+            f"Subzone '{subzone['name']}' "
+            f"set to "
+            f"{'active' if new_status == 1 else 'inactive'}"
         )
     )
 
     flash(
-        "Subzone limezuiwa kutumika.",
+        (
+            "Subzone imewezeshwa."
+            if new_status == 1
+            else "Subzone imezimwa."
+        ),
         "success"
     )
 
@@ -5217,7 +5083,475 @@ def toggle_announcement(
     return redirect(
         url_for("announcements")
     )
+# ============================================================
+# GROUPS
+# ============================================================
+# ============================================================
+# CREATE GROUP
+# ============================================================
 
+@app.route(
+    "/groups/create",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("groups.create")
+def create_group():
+
+    if request.method == "POST":
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        description = request.form.get(
+            "description",
+            ""
+        ).strip()
+
+        leader = request.form.get(
+            "leader",
+            ""
+        ).strip()
+
+        phone = request.form.get(
+            "phone",
+            ""
+        ).strip()
+
+        if not name:
+
+            flash(
+                "Jina la group linahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "create_group.html"
+            )
+
+        existing = get_db().execute(
+            """
+            SELECT id
+            FROM groups
+            WHERE LOWER(name) = LOWER(%s)
+            """,
+            (name,)
+        ).fetchone()
+
+        if existing:
+
+            flash(
+                "Group hilo tayari lipo.",
+                "error"
+            )
+
+            return render_template(
+                "create_group.html"
+            )
+
+        db = get_db()
+
+        db.execute(
+            """
+            INSERT INTO groups (
+                name,
+                description,
+                leader,
+                phone,
+                is_active
+            )
+            VALUES (
+                %s,
+                %s,
+                %s,
+                %s,
+                TRUE
+            )
+            """,
+            (
+                name,
+                description or None,
+                leader or None,
+                phone or None
+            )
+        )
+
+        log_action(
+            "CREATE_GROUP",
+            f"Created group: {name}"
+        )
+
+        db.connection.commit()
+
+        flash(
+            "Group limeundwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for("groups")
+        )
+
+    return render_template(
+        "create_group.html"
+    )
+
+
+# ============================================================
+# EDIT GROUP
+# ============================================================
+
+@app.route(
+    "/groups/<int:group_id>/edit",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("groups.edit")
+def edit_group(group_id):
+
+    db = get_db()
+
+    group = db.execute(
+        """
+        SELECT
+            id,
+            name,
+            description,
+            leader,
+            phone,
+            is_active
+        FROM groups
+        WHERE id = %s
+        """,
+        (group_id,)
+    ).fetchone()
+
+    if not group:
+        return render_template(
+            "404.html"
+        ), 404
+
+    if request.method == "POST":
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        description = request.form.get(
+            "description",
+            ""
+        ).strip()
+
+        leader = request.form.get(
+            "leader",
+            ""
+        ).strip()
+
+        phone = request.form.get(
+            "phone",
+            ""
+        ).strip()
+
+        if not name:
+
+            flash(
+                "Jina la group linahitajika.",
+                "error"
+            )
+
+            return render_template(
+                "edit_group.html",
+                group=group
+            )
+
+        existing = db.execute(
+            """
+            SELECT id
+            FROM groups
+            WHERE LOWER(name) = LOWER(%s)
+            AND id != %s
+            """,
+            (
+                name,
+                group_id
+            )
+        ).fetchone()
+
+        if existing:
+
+            flash(
+                "Group hilo tayari lipo.",
+                "error"
+            )
+
+            return render_template(
+                "edit_group.html",
+                group=group
+            )
+
+        db.execute(
+            """
+            UPDATE groups
+            SET
+                name = %s,
+                description = %s,
+                leader = %s,
+                phone = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            """,
+            (
+                name,
+                description or None,
+                leader or None,
+                phone or None,
+                group_id
+            )
+        )
+
+        log_action(
+            "EDIT_GROUP",
+            f"Edited group: {name}"
+        )
+
+        db.commit()
+
+        flash(
+            "Group limehaririwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for("groups")
+        )
+
+    return render_template(
+        "edit_group.html",
+        group=group
+    )
+
+
+# ============================================================
+# DELETE GROUP
+# ============================================================
+
+@app.route(
+    "/groups/<int:group_id>/delete",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("groups.delete")
+def delete_group(group_id):
+
+    db = get_db()
+
+    group = db.execute(
+        """
+        SELECT
+            id,
+            name,
+            description,
+            leader,
+            phone,
+            is_active
+        FROM groups
+        WHERE id = %s
+        """,
+        (group_id,)
+    ).fetchone()
+
+    if not group:
+        return render_template(
+            "404.html"
+        ), 404
+
+    if request.method == "POST":
+
+        db.execute(
+            """
+            DELETE FROM groups
+            WHERE id = %s
+            """,
+            (group_id,)
+        )
+
+        log_action(
+            "DELETE_GROUP",
+            f"Deleted group: {group['name']}"
+        )
+
+        db.commit()
+
+        flash(
+            "Group limefutwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for("groups")
+        )
+
+    return render_template(
+        "delete_group.html",
+        group=group
+    )
+
+# ============================================================
+# GROUP MEMBERS
+# ============================================================
+
+@app.route(
+    "/groups/<int:group_id>/members",
+    methods=["GET", "POST"]
+)
+@login_required
+@permission_required("groups.edit")
+def group_members(group_id):
+
+    db = get_db()
+
+    # Get the group
+    group = db.execute(
+        """
+        SELECT
+            id,
+            name
+        FROM groups
+        WHERE id = %s
+        """,
+        (group_id,)
+    ).fetchone()
+
+    if not group:
+        return render_template(
+            "404.html"
+        ), 404
+
+    # Get all church members
+    members = db.execute(
+        """
+        SELECT
+            id,
+            namba_ya_usajili,
+            jina_kamili,
+            namba_ya_sim
+        FROM waumini
+        ORDER BY jina_kamili ASC
+        """
+    ).fetchall()
+
+    # Get members already assigned to this group
+    assigned_members = db.execute(
+        """
+        SELECT
+            member_id
+        FROM member_groups
+        WHERE group_id = %s
+        """,
+        (group_id,)
+    ).fetchall()
+
+    assigned_ids = {
+        member["member_id"]
+        for member in assigned_members
+    }
+
+    if request.method == "POST":
+
+        selected_members = request.form.getlist(
+            "member_ids"
+        )
+
+        # Remove existing assignments for this group
+        db.execute(
+            """
+            DELETE FROM member_groups
+            WHERE group_id = %s
+            """,
+            (group_id,)
+        )
+
+        # Add the selected members
+        for member_id in selected_members:
+
+            db.execute(
+                """
+                INSERT INTO member_groups (
+                    member_id,
+                    group_id
+                )
+                VALUES (
+                    %s,
+                    %s
+                )
+                ON CONFLICT (
+                    member_id,
+                    group_id
+                )
+                DO NOTHING
+                """,
+                (
+                    member_id,
+                    group_id
+                )
+            )
+
+        log_action(
+            "UPDATE_GROUP_MEMBERS",
+            f"Updated members for group: {group['name']}"
+        )
+
+        db.commit()
+
+        flash(
+            "Wanachama wa group wamebadilishwa.",
+            "success"
+        )
+
+        return redirect(
+            url_for(
+                "group_members",
+                group_id=group_id
+            )
+        )
+
+    return render_template(
+        "group_members.html",
+        group=group,
+        members=members,
+        assigned_ids=assigned_ids
+    )
+
+@app.route("/groups")
+@login_required
+@permission_required("groups.view")
+def groups():
+
+    db = get_db()
+
+    groups = db.execute(
+        """
+        SELECT
+            id,
+            name,
+            description,
+            leader,
+            phone,
+            is_active,
+            created_at,
+            updated_at
+        FROM groups
+        ORDER BY name ASC
+        """
+    ).fetchall()
+
+    return render_template(
+        "groups.html",
+        groups=groups
+    )
 
 @app.route(
     "/announcements/<int:announcement_id>/delete",

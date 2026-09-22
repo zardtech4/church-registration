@@ -8542,3 +8542,621 @@ h1.finance-dashboard-title {
         padding: 15px;
     }
 }
+/* ============================================================
+   GLOBAL NAVIGATION ACTIONS
+   ============================================================ */
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+/* ============================================================
+   NAV ICON BUTTON
+   ============================================================ */
+
+.nav-icon-button {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #dbe4ef;
+    text-decoration: none;
+
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+
+    font-size: 18px;
+    cursor: pointer;
+
+    transition:
+        background 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease,
+        transform 0.2s ease;
+}
+
+.nav-icon-button:hover {
+    color: #f4d27a;
+
+    background:
+        rgba(212, 175, 55, 0.10);
+
+    border-color:
+        rgba(212, 175, 55, 0.18);
+
+    transform: translateY(-1px);
+}
+
+
+/* ============================================================
+   APP LAUNCHER
+   ============================================================ */
+
+.app-launcher {
+    position: relative;
+}
+
+
+.app-launcher-button {
+    font-size: 20px;
+    letter-spacing: 2px;
+}
+
+
+/* ============================================================
+   APP LAUNCHER MENU
+   ============================================================ */
+
+.app-launcher-menu {
+    position: absolute;
+
+    top: calc(100% + 12px);
+    right: 0;
+
+    width: 340px;
+
+    padding: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(20, 38, 60, 0.99),
+            rgba(8, 23, 40, 0.99)
+        );
+
+    border: 1px solid
+        rgba(212, 175, 55, 0.18);
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.45);
+
+    opacity: 0;
+    visibility: hidden;
+
+    transform:
+        translateY(-8px)
+        scale(0.98);
+
+    transform-origin: top right;
+
+    transition:
+        opacity 0.18s ease,
+        visibility 0.18s ease,
+        transform 0.18s ease;
+
+    z-index: 1000;
+}
+
+
+.app-launcher-menu.show {
+    opacity: 1;
+    visibility: visible;
+
+    transform:
+        translateY(0)
+        scale(1);
+}
+
+
+/* ============================================================
+   LAUNCHER HEADER
+   ============================================================ */
+
+.app-launcher-header {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+
+    padding: 4px 4px 15px;
+
+    border-bottom:
+        1px solid rgba(255, 255, 255, 0.07);
+
+    margin-bottom: 14px;
+}
+
+
+.app-launcher-header strong {
+    color: #f4d27a;
+    font-size: 16px;
+}
+
+
+.app-launcher-header span {
+    color: #8fa3b8;
+    font-size: 12px;
+}
+
+
+/* ============================================================
+   APP GRID
+   ============================================================ */
+
+.app-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 8px;
+}
+
+
+.app-item {
+    min-height: 82px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    color: #dbe4ef;
+
+    text-decoration: none;
+
+    border-radius: 12px;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.app-item:hover {
+    color: #f4d27a;
+
+    background:
+        rgba(212, 175, 55, 0.10);
+
+    transform: translateY(-2px);
+}
+
+
+.app-icon {
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background:
+        rgba(255, 255, 255, 0.05);
+
+    font-size: 20px;
+}
+
+
+.app-item span:last-child {
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+
+.nav-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding-left: 7px;
+
+    border-left:
+        1px solid rgba(255, 255, 255, 0.08);
+}
+
+
+.nav-profile-name {
+    max-width: 140px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #dbe4ef;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+.nav-profile-link {
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #dbe4ef;
+
+    text-decoration: none;
+
+    border-radius: 50%;
+
+    background:
+        rgba(212, 175, 55, 0.10);
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+
+.nav-profile-link:hover {
+    color: #f4d27a;
+
+    background:
+        rgba(212, 175, 55, 0.18);
+}
+
+
+/* ============================================================
+   RESPONSIVE NAVIGATION
+   ============================================================ */
+
+@media (max-width: 800px) {
+
+    .navbar {
+        padding:
+            12px 18px;
+    }
+
+    .nav-brand {
+        font-size: 16px;
+    }
+
+    .nav-profile-name {
+        display: none;
+    }
+
+    .app-launcher-menu {
+        right: -45px;
+        width: min(340px, calc(100vw - 30px));
+    }
+
+}
+
+
+@media (max-width: 500px) {
+
+    .nav-brand {
+        max-width: 150px;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .nav-actions {
+        gap: 3px;
+    }
+
+    .nav-icon-button {
+        width: 38px;
+        height: 38px;
+    }
+
+    .nav-profile {
+        padding-left: 3px;
+    }
+
+    .app-launcher-menu {
+        right: -10px;
+    }
+
+}
+/* ============================================================
+   GROUPS
+   ============================================================ */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    margin: 0 0 6px;
+}
+
+.page-header p {
+    margin: 0;
+    opacity: 0.75;
+}
+
+
+/* Groups card */
+
+.card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.card-header h2 {
+    margin: 0;
+}
+
+.card-header p {
+    margin: 5px 0 0;
+    opacity: 0.7;
+}
+
+
+/* Table */
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table-responsive table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-responsive th,
+.table-responsive td {
+    padding: 14px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.table-responsive th {
+    font-weight: 600;
+}
+
+
+/* Status */
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-badge.active {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-badge.inactive {
+    background: #ffebee;
+    color: #c62828;
+}
+
+
+/* Action buttons */
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-small {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+
+/* Empty state */
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state h3 {
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    opacity: 0.7;
+}
+
+
+/* Mobile */
+
+@media (max-width: 768px) {
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .table-responsive th,
+    .table-responsive td {
+        padding: 10px 8px;
+        white-space: nowrap;
+    }
+
+}/* ============================================================
+   GROUPS — COLOR REFINEMENT
+   ============================================================ */
+
+/* Group cards */
+.card,
+.form-card {
+    background: #ffffff;
+    color: #17233c;
+}
+
+/* Headings */
+.page-header h1,
+.card h2,
+.card h3,
+.form-card h1,
+.form-card h2 {
+    color: #17233c;
+}
+
+/* Secondary text */
+.page-header p,
+.card-header p,
+.empty-state p,
+.form-card p {
+    color: #667085;
+}
+
+/* Form labels */
+.form-group label {
+    color: #17233c;
+}
+
+/* Form fields */
+.form-group input,
+.form-group textarea,
+.form-group select {
+    color: #17233c;
+    background: #ffffff;
+    border-color: #d9dee8;
+}
+
+/* Table */
+.table-responsive table {
+    background: #ffffff;
+}
+
+.table-responsive th {
+    background: #17233c;
+    color: #ffffff;
+}
+
+.table-responsive td {
+    color: #17233c;
+    background: #ffffff;
+    border-bottom-color: #e6e9ef;
+}
+
+/* Keep rows clean and readable */
+.table-responsive tbody tr:hover td {
+    background: #f8f9fc;
+}
+
+/* Group status */
+.status-badge.active {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-badge.inactive {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* Delete confirmation */
+.delete-confirmation h2 {
+    color: #17233c;
+}
+
+.delete-confirmation p {
+    color: #667085;
+}
+/* ============================================================
+   GROUP MEMBERS
+   ============================================================ */
+
+.group-members-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.group-member-option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid #e1e5eb;
+    border-radius: 10px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.group-member-option:hover {
+    background: #f8f9fc;
+    border-color: #c9d0dc;
+}
+
+.group-member-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.group-member-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.group-member-info strong {
+    color: #17233c;
+    font-size: 0.95rem;
+}
+
+.group-member-info span {
+    color: #667085;
+    font-size: 0.85rem;
+}

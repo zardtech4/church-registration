@@ -1,320 +1,228 @@
-<!DOCTYPE html>
-<html lang="sw">
 
-<head>
+{% extends "base.html" %}
 
-    <meta charset="UTF-8">
+{% block title %}Usajili wa Waumini{% endblock %}
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+{% block content %}
 
-    <title>Usajili wa Waumini</title>
+<main class="page-container">
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
+    <section class="form-card">
 
-</head>
+        <div class="form-header">
 
-
-<body>
-
-
-    <nav class="navbar">
-
-        <div class="nav-brand">
-
-            {% if church_settings and church_settings["church_name"] %}
-                {{ church_settings["church_name"] }}
-            {% else %}
-                USAJILI WA WAUMINI
+            {% if church_settings and church_settings["logo"] %}
+                <img
+                    src="{{ url_for(
+                        'static',
+                        filename='uploads/' + church_settings['logo']
+                    ) }}"
+                    alt="Logo ya Kanisa"
+                    style="
+                        max-width: 110px;
+                        max-height: 110px;
+                        object-fit: contain;
+                        margin-bottom: 15px;
+                    "
+                >
             {% endif %}
 
-        </div>
+            <h1>
+                Sajili Muumini
+            </h1>
 
-
-        <div class="nav-links">
-
-            <a href="/">
-                Sajili
-            </a>
-
-            <a href="{{ url_for('login') }}">
-                🔐 Admin Login
-            </a>
+            <p>
+                Ingiza taarifa za muumini hapa chini.
+            </p>
 
         </div>
-        <a href="{{ url_for('home') }}">
-    Mwanzo
-</a>
 
-    </nav>
+        {% if error %}
+            <div class="form-error">
+                {{ error }}
+            </div>
+        {% endif %}
 
+        <form
+            method="POST"
+            action="{{ url_for('register') }}"
+            enctype="multipart/form-data"
+        >
 
+            <div class="form-group">
 
-    <main class="page-container">
+                <label for="jina">
+                    Jina Kamili
+                </label>
 
-
-        <section class="form-card">
-
-
-            <div class="form-header">
-
-                {% if church_settings and church_settings["logo"] %}
-
-                    <img
-                        src="{{ url_for(
-                            'static',
-                            filename='uploads/' + church_settings['logo']
-                        ) }}"
-                        alt="Logo ya Kanisa"
-                        style="
-                            max-width: 110px;
-                            max-height: 110px;
-                            object-fit: contain;
-                            margin-bottom: 15px;
-                        "
-                    >
-
-                {% endif %}
-
-
-                <h1>
-                    Sajili Muumini
-                </h1>
-
-                <p>
-                    Ingiza taarifa za muumini hapa chini.
-                </p>
+                <input
+                    type="text"
+                    id="jina"
+                    name="jina_kamili"
+                    placeholder="Ingiza jina kamili"
+                    value="{{ form_data.jina_kamili if form_data else '' }}"
+                    required
+                >
 
             </div>
 
 
-            {% if error %}
-
-                <div class="form-error">
-                    {{ error }}
-                </div>
-
-            {% endif %}
-
-
-            <form
-                method="POST"
-                action="{{ url_for('register') }}"
-                enctype="multipart/form-data"
-            >
-
-
-                <div class="form-group">
-
-                    <label for="jina">
-
-                        Jina Kamili
-
-                    </label>
-
-                    <input
-                        type="text"
-                        id="jina"
-                        name="jina_kamili"
-                        placeholder="Ingiza jina kamili"
-                        value="{{ form_data.jina_kamili if form_data else '' }}"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="makazi">
-
-                        Makazi
-
-                    </label>
-
-                    <input
-                        type="text"
-                        id="makazi"
-                        name="makazi"
-                        placeholder="Mfano: Mbezi, Dar es Salaam"
-                        value="{{ form_data.makazi if form_data else '' }}"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="simu">
-
-                        Namba ya Simu
-
-                    </label>
-
-                    <input
-                        type="tel"
-                        id="simu"
-                        name="namba_ya_sim"
-                        placeholder="0712345678"
-                        value="{{ form_data.namba_ya_sim if form_data else '' }}"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="jinsia">
-
-                        Jinsia
-
-                    </label>
-
-                    <select
-                        id="jinsia"
-                        name="jinsia"
-                        required
-                    >
-
-                        <option value="">
-                            -- Chagua Jinsia --
-                        </option>
-
-
-                        <option
-                            value="Mwanaume"
-
-                            {% if form_data and form_data.jinsia == "Mwanaume" %}
-                                selected
-                            {% endif %}
-                        >
-
-                            Mwanaume
-
-                        </option>
-
-
-                        <option
-                            value="Mwanamke"
-
-                            {% if form_data and form_data.jinsia == "Mwanamke" %}
-                                selected
-                            {% endif %}
-                        >
-
-                            Mwanamke
-
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- SUBZONE -->
-
-                <div class="form-group">
-
-                    <label for="subzone_id">
-
-                        Subzone
-
-                    </label>
-
-                    <select
-                        id="subzone_id"
-                        name="subzone_id"
-                    >
-
-                        <option value="">
-                            -- Chagua Subzone --
-                        </option>
-
-
-                        {% for subzone in subzones %}
-
-                            <option
-                                value="{{ subzone['id'] }}"
-
-                                {% if form_data and form_data.subzone_id|string == subzone['id']|string %}
-                                    selected
-                                {% endif %}
-                            >
-
-                                {{ subzone["name"] }}
-
-                            </option>
-
-                        {% endfor %}
-
-                    </select>
-
-
-                    {% if not subzones %}
-
-                        <small>
-                            Hakuna subzone iliyowekwa bado.
-                        </small>
-
-                    {% else %}
-
-                        <small>
-                            Chagua subzone ya muumini kama inajulikana.
-                        </small>
-
-                    {% endif %}
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="picha">
-
-                        Picha
-
-                    </label>
-
-                    <input
-                        type="file"
-                        id="picha"
-                        name="picha"
-                        accept="image/*"
-                    >
-
-                    <small>
-                        Picha ni hiari.
-                    </small>
-
-                </div>
-
-
-                <button
-                    type="submit"
-                    class="primary-button"
+            <div class="form-group">
+
+                <label for="makazi">
+                    Makazi
+                </label>
+
+                <input
+                    type="text"
+                    id="makazi"
+                    name="makazi"
+                    placeholder="Mfano: Mbezi, Dar es Salaam"
+                    value="{{ form_data.makazi if form_data else '' }}"
+                    required
                 >
 
-                    SAJILI MUUMINI
-
-                </button>
+            </div>
 
 
-            </form>
+            <div class="form-group">
+
+                <label for="simu">
+                    Namba ya Simu
+                </label>
+
+                <input
+                    type="tel"
+                    id="simu"
+                    name="namba_ya_sim"
+                    placeholder="0712345678"
+                    value="{{ form_data.namba_ya_sim if form_data else '' }}"
+                    required
+                >
+
+            </div>
 
 
-        </section>
+            <div class="form-group">
+
+                <label for="jinsia">
+                    Jinsia
+                </label>
+
+                <select
+                    id="jinsia"
+                    name="jinsia"
+                    required
+                >
+
+                    <option value="">
+                        -- Chagua Jinsia --
+                    </option>
+
+                    <option
+                        value="Mwanaume"
+                        {% if form_data and form_data.jinsia == "Mwanaume" %}
+                            selected
+                        {% endif %}
+                    >
+                        Mwanaume
+                    </option>
+
+                    <option
+                        value="Mwanamke"
+                        {% if form_data and form_data.jinsia == "Mwanamke" %}
+                            selected
+                        {% endif %}
+                    >
+                        Mwanamke
+                    </option>
+
+                </select>
+
+            </div>
 
 
-    </main>
+            <!-- SUBZONE -->
+
+            <div class="form-group">
+
+                <label for="subzone_id">
+                    Subzone
+                </label>
+
+                <select
+                    id="subzone_id"
+                    name="subzone_id"
+                >
+
+                    <option value="">
+                        -- Chagua Subzone --
+                    </option>
+
+                    {% for subzone in subzones %}
+
+                        <option
+                            value="{{ subzone['id'] }}"
+                            {% if form_data and form_data.subzone_id|string == subzone['id']|string %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ subzone["name"] }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+                {% if not subzones %}
+
+                    <small>
+                        Hakuna subzone iliyowekwa bado.
+                    </small>
+
+                {% else %}
+
+                    <small>
+                        Chagua subzone ya muumini kama inajulikana.
+                    </small>
+
+                {% endif %}
+
+            </div>
 
 
-</body>
+            <div class="form-group">
 
-</html>
+                <label for="picha">
+                    Picha
+                </label>
+
+                <input
+                    type="file"
+                    id="picha"
+                    name="picha"
+                    accept="image/*"
+                >
+
+                <small>
+                    Picha ni hiari.
+                </small>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="primary-button"
+            >
+                SAJILI MUUMINI
+            </button>
+
+        </form>
+
+    </section>
+
+</main>
+
+{% endblock %}
+

@@ -9223,3 +9223,19 @@ h1.finance-dashboard-title {
         box-sizing: border-box;
     }
 }
+@media (max-width: 500px) {
+
+    .app-launcher-menu {
+        position: fixed;
+        top: 70px;
+        left: 12px;
+        right: 12px;
+
+        width: auto;
+        max-width: none;
+        box-sizing: border-box;
+
+        margin: 0;
+    }
+
+}

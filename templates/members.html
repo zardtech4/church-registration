@@ -33,12 +33,16 @@
 
         <div class="stat-card">
 
-            <h3>
-                JUMLA YA WAUMINI
-            </h3>
+            <div class="stat-information">
 
-            <div class="stat-number">
-                {{ members|length }}
+                <p>
+                    JUMLA YA WAUMINI
+                </p>
+
+                <h2>
+                    {{ members|length }}
+                </h2>
+
             </div>
 
         </div>
@@ -153,14 +157,14 @@
 
                 <button
                     type="submit"
-                    class="btn btn-primary"
+                    class="primary-button"
                 >
                     TAFUTA
                 </button>
 
                 <a
                     href="{{ url_for('members') }}"
-                    class="btn btn-secondary"
+                    class="secondary-button"
                 >
                     ONDOA FILTER
                 </a>
@@ -334,7 +338,7 @@
                                     'edit_member',
                                     member_id=member.id
                                 ) }}"
-                                class="btn btn-small btn-primary"
+                                class="edit-button"
                             >
                                 EDIT
                             </a>
@@ -353,7 +357,7 @@
                                     'delete_member',
                                     member_id=member.id
                                 ) }}"
-                                class="btn btn-small btn-danger"
+                                class="delete-button"
                             >
                                 DELETE
                             </a>
@@ -370,7 +374,7 @@
 
                         <td
                             colspan="9"
-                            style="text-align: center; padding: 30px;"
+                            class="table-empty"
                         >
                             Hakuna waumini waliopatikana.
                         </td>

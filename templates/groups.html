@@ -17,7 +17,7 @@
 
         <a
             href="{{ url_for('create_group') }}"
-            class="btn btn-primary"
+            class="primary-button"
         >
             + Add Group
         </a>
@@ -132,44 +132,41 @@
 
 
                             <td>
-<td>
 
-    <div class="action-buttons">
+                                <div class="action-buttons">
 
-        <a
-            href="{{ url_for('group_members', group_id=group['id']) }}"
-            class="btn btn-small"
-        >
-            Members
-        </a>
-
-
-        {% if can_edit_groups %}
-
-            <a
-                href="{{ url_for('edit_group', group_id=group['id']) }}"
-                class="btn btn-small"
-            >
-                Edit
-            </a>
-
-        {% endif %}
+                                    <a
+                                        href="{{ url_for('group_members', group_id=group['id']) }}"
+                                        class="edit-button"
+                                    >
+                                        Members
+                                    </a>
 
 
-        {% if can_delete_groups %}
+                                    {% if can_edit_groups %}
 
-            <a
-                href="{{ url_for('delete_group', group_id=group['id']) }}"
-                class="btn btn-small btn-danger"
-            >
-                Delete
-            </a>
+                                        <a
+                                            href="{{ url_for('edit_group', group_id=group['id']) }}"
+                                            class="edit-button"
+                                        >
+                                            Edit
+                                        </a>
 
-        {% endif %}
+                                    {% endif %}
 
-    </div>
 
-</td>
+                                    {% if can_delete_groups %}
+
+                                        <a
+                                            href="{{ url_for('delete_group', group_id=group['id']) }}"
+                                            class="delete-button"
+                                        >
+                                            Delete
+                                        </a>
+
+                                    {% endif %}
+
+                                </div>
 
                             </td>
 
@@ -197,7 +194,7 @@
 
                 <a
                     href="{{ url_for('create_group') }}"
-                    class="btn btn-primary"
+                    class="primary-button"
                 >
                     Create the first group
                 </a>

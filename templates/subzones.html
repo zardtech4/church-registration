@@ -93,10 +93,7 @@ Subzones -
 
 <!-- SUBZONE LIST -->
 
-<section
-    class="form-card"
-    style="margin-top: 25px;"
->
+<section class="form-card">
 
     <div class="form-header">
 
@@ -110,67 +107,37 @@ Subzones -
     {% if subzones %}
 
 
-        <div style="overflow-x: auto;">
+        <div class="table-responsive">
 
-            <table
-                style="
-                    width: 100%;
-                    border-collapse: collapse;
-                "
-            >
+            <table class="subzone-table">
 
                 <thead>
 
                     <tr>
 
-                        <th
-                            style="
-                                text-align: left;
-                                padding: 12px;
-                            "
-                        >
+                        <th>
                             Subzone
                         </th>
 
 
-                        <th
-                            style="
-                                text-align: left;
-                                padding: 12px;
-                            "
-                        >
+                        <th>
                             Maelezo
                         </th>
 
 
-                        <th
-                            style="
-                                text-align: center;
-                                padding: 12px;
-                            "
-                        >
+                        <th class="center">
                             Waumini
                         </th>
 
 
-                        <th
-                            style="
-                                text-align: center;
-                                padding: 12px;
-                            "
-                        >
+                        <th class="center">
                             Status
                         </th>
 
 
                         {% if can_edit_subzones or can_delete_subzones %}
 
-                            <th
-                                style="
-                                    text-align: center;
-                                    padding: 12px;
-                                "
-                            >
+                            <th class="center">
                                 Vitendo
                             </th>
 
@@ -188,7 +155,7 @@ Subzones -
 
                         <tr>
 
-                            <td style="padding: 12px;">
+                            <td>
 
                                 <strong>
                                     {{ subzone["name"] }}
@@ -197,41 +164,31 @@ Subzones -
                             </td>
 
 
-                            <td style="padding: 12px;">
+                            <td>
 
                                 {{ subzone["description"] or "-" }}
 
                             </td>
 
 
-                            <td
-                                style="
-                                    padding: 12px;
-                                    text-align: center;
-                                "
-                            >
+                            <td class="center">
 
                                 {{ subzone["member_count"] }}
 
                             </td>
 
 
-                            <td
-                                style="
-                                    padding: 12px;
-                                    text-align: center;
-                                "
-                            >
+                            <td class="center">
 
                                 {% if subzone["active"] %}
 
-                                    <span>
+                                    <span class="status-badge active">
                                         Active
                                     </span>
 
                                 {% else %}
 
-                                    <span>
+                                    <span class="status-badge inactive">
                                         Inactive
                                     </span>
 
@@ -242,12 +199,7 @@ Subzones -
 
                             {% if can_edit_subzones or can_delete_subzones %}
 
-                                <td
-                                    style="
-                                        padding: 12px;
-                                        text-align: center;
-                                    "
-                                >
+                                <td class="center subzone-inline-edit">
 
 
                                     {% if can_edit_subzones %}
@@ -260,7 +212,6 @@ Subzones -
                                                 'edit_subzone',
                                                 subzone_id=subzone['id']
                                             ) }}"
-                                            style="margin-bottom: 8px;"
                                         >
 
                                             <input
@@ -268,10 +219,6 @@ Subzones -
                                                 name="name"
                                                 value="{{ subzone['name'] }}"
                                                 required
-                                                style="
-                                                    max-width: 150px;
-                                                    margin-bottom: 5px;
-                                                "
                                             >
 
                                             <input
@@ -279,10 +226,6 @@ Subzones -
                                                 name="description"
                                                 value="{{ subzone['description'] or '' }}"
                                                 placeholder="Maelezo"
-                                                style="
-                                                    max-width: 150px;
-                                                    margin-bottom: 5px;
-                                                "
                                             >
 
                                             <button
@@ -340,7 +283,6 @@ Subzones -
                                                 'delete_subzone',
                                                 subzone_id=subzone['id']
                                             ) }}"
-                                            style="margin-top: 8px;"
                                             onsubmit="
                                                 return confirm(
                                                     'Una uhakika unataka kufuta subzone hii?'
@@ -378,7 +320,7 @@ Subzones -
 
     {% else %}
 
-        <p>
+        <p class="muted">
             Hakuna subzone iliyowekwa bado.
         </p>
 

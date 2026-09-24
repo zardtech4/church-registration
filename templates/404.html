@@ -17,76 +17,6 @@
 
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-<style>
-    .error-page {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 30px 20px;
-        box-sizing: border-box;
-        text-align: center;
-        background: #f5f6fa;
-    }
-
-    .error-box {
-        width: 100%;
-        max-width: 560px;
-    }
-
-    .error-code {
-        font-size: clamp(80px, 18vw, 150px);
-        font-weight: 800;
-        line-height: 1;
-        margin: 0;
-        color: #1e3a5f;
-        letter-spacing: -5px;
-    }
-
-    .error-box h2 {
-        margin: 15px 0 10px;
-        font-size: 28px;
-        color: #222;
-    }
-
-    .error-box p {
-        margin: 0 auto;
-        max-width: 430px;
-        color: #666;
-        line-height: 1.7;
-    }
-
-    .error-actions {
-        margin-top: 28px;
-    }
-
-    .error-button {
-        display: inline-block;
-        padding: 12px 24px;
-        background: #1e3a5f;
-        color: white;
-        text-decoration: none;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: 0.2s ease;
-    }
-
-    .error-button:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-    }
-
-    .error-church-name {
-        margin-bottom: 25px;
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        color: #777;
-    }
-</style>
-  
-
 </head>
 
 <body>
@@ -94,7 +24,7 @@
   
 <main class="error-page">
 
-    <div class="error-box">
+    <section class="error-card">
 
         {% if church_settings and church_settings["church_name"] %}
             <div class="error-church-name">
@@ -102,9 +32,13 @@
             </div>
         {% endif %}
 
-        <h1 class="error-code">404</h1>
+        <div class="error-icon">
+            🔍
+        </div>
 
-        <h2>Ukurasa Haupatikani</h2>
+        <div class="error-code">404</div>
+
+        <h1>Ukurasa Haupatikani</h1>
 
         <p>
             Samahani, ukurasa unaoutafuta haupo au huenda
@@ -112,12 +46,12 @@
         </p>
 
         <div class="error-actions">
-            <a href="{{ url_for('home') }}" class="error-button">
+            <a href="{{ url_for('home') }}" class="primary-button">
                 ← Rudi Mwanzo
             </a>
         </div>
 
-    </div>
+    </section>
 
 </main>
   

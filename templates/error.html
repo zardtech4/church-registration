@@ -25,67 +25,6 @@
     href="{{ url_for('static', filename='style.css') }}"
 >
 
-<style>
-    .error-page {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 30px 20px;
-        box-sizing: border-box;
-        background: #f5f6fa;
-    }
-
-    .error-card {
-        width: 100%;
-        max-width: 560px;
-        padding: 45px 30px;
-        box-sizing: border-box;
-        text-align: center;
-    }
-
-    .error-icon {
-        font-size: 58px;
-        margin-bottom: 15px;
-    }
-
-    .error-code {
-        font-size: 18px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        color: #777;
-        margin-bottom: 10px;
-    }
-
-    .error-card h1 {
-        margin: 0 0 12px;
-        font-size: 30px;
-        color: #222;
-    }
-
-    .error-message {
-        max-width: 450px;
-        margin: 0 auto;
-        color: #666;
-        line-height: 1.7;
-        word-break: break-word;
-    }
-
-    .error-actions {
-        margin-top: 30px;
-    }
-
-    .error-church-name {
-        margin-bottom: 25px;
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        color: #777;
-    }
-</style>
-  
-
 </head>
 
 <body>
@@ -105,9 +44,9 @@
             ⚠️
         </div>
 
-        <div class="error-code">
+        <span class="dashboard-label">
             SYSTEM ERROR
-        </div>
+        </span>
 
         <h1>
             Kuna Tatizo
